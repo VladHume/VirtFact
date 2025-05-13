@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Віртуальна виробнича лінія | Реєстрація</title>
+    <link rel="stylesheet" href="../static/styles/register_styles.css">
+    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/register_styles.css') }}"> для Flask -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header>
+    <h1>Віртуальна виробнича лінія</h1>
+</header>
+
+<div class="register-container">
+    <form class="register-form" id="register-form" action="" method="post">
+        <h2>Реєстрація</h2>
+        <hr>
+        <label for="phone-number">Номер телефону:</label>
+        <input type="text" id = "phone-number" name="phone-number" placeholder="Введіть номер телефону">
+        <label for="company-name">Назва компанії:</label>
+        <input type="text" id = "company-name" name="company-name" placeholder="Введіть назву компанії">
+        <label for="password">Пароль:</label>
+        <input type="password" id = "password" name="password" placeholder="Введіть пароль">
+        <button type="submit">Зареєструватися</button>
+    </form>
+    <span class="or">або</span>
+    <a href="login.html" class="tab-link">Увійти</a>
+    <!-- {{ url_for('login') }} -->
+</div>
+<script>
+    document.getElementById('register-form').addEventListener('submit', function(event) {
+        const phone_number = document.getElementById('phone-number').value.trim();
+        const company_name = document.getElementById('company-name').value.trim();
+        const password = document.getElementById('password').value.trim();
+        let errors = [];
+
+        if (phone_number === '') {
+            errors.push('Номер телефону не може бути порожнім.');
+        } else if (phone_number.length < 10) {
+            errors.push('Номер телефону має містити щонайменше 10 символів.');
+        }
+
+        if (company_name === '') {
+            errors.push('Назва компанії не може бути порожньою.');
+        }
+
+        if (password === '') {
+            errors.push('Пароль не може бути порожнім.');
+        } else if (password.length < 6) {
+            errors.push('Пароль має містити щонайменше 6 символів.');
+        }
+
+        if (errors.length > 0) {
+            alert(errors.join('\n'));
+            event.preventDefault();
+        }
+    });
+</script>
+</body>
+</html>

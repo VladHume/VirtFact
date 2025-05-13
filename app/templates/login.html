@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Віртуальна виробнича лінія | Вхід</title>
+    <link rel="stylesheet" href="../static/styles/login_styles.css">
+    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_styles.css') }}"> для Flask -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+<header>
+ <h1>Віртуальна виробнича лінія</h1>
+</header>
+
+<div class="login-container">
+    <form class="login-form" id="login-form" action="#" method="post">
+        <h2>Авторизація в системі</h2>
+        <hr>
+        <label for="login">Логін:</label>
+        <input type="text" id = "login" name="login" placeholder="Введіть логін">
+        <label for="password">Пароль:</label>
+        <input type="password" id = "password" name="password" placeholder="Введіть пароль">
+        <button type="submit">Увійти</button>
+    </form>
+    <span class="or">або</span>
+    <a href="register.html" class="tab-link">Зареєструватися</a>
+    <!-- {{ url_for('register') }} -->
+</div>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', function(event) {
+        const login = document.getElementById('login').value.trim();
+        const password = document.getElementById('password').value.trim();
+        let errors = [];
+
+        if (login === '') {
+            errors.push('Логін не може бути порожнім.');
+        } else if (login.length < 10) {
+            errors.push('Логін має містити щонайменше 10 символів.');
+        }
+
+        if (password === '') {
+            errors.push('Пароль не може бути порожнім.');
+        } else if (password.length < 6) {
+            errors.push('Пароль має містити щонайменше 6 символів.');
+        }
+
+        if (errors.length > 0) {
+            alert(errors.join('\n'));
+            event.preventDefault(); // Заборонити відправлення форми
+        }
+    });
+</script>
+</body>
+</html>
