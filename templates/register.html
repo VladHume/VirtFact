@@ -13,12 +13,12 @@
 
 <div class="register-container">
     <form class="register-form" id="register-form" action="/register" method="POST">
-        {% with messages = get_flashed_messages() %}
-           {% if messages %}
-              {% for message in messages %}
-                 {{ message }}
-              {% endfor %}
-           {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
         {% endwith %}
         <h2>Реєстрація</h2>
         <hr>

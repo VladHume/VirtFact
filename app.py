@@ -11,12 +11,36 @@ app.config['SECRET_KEY'] = SECRET_KEY
 db.init_app(app)
 migrate.init_app(app, db)
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def login():
+    if 'login_flash' in session:
+        category, message = session['login_flash']
+        flash(message, category)
+        session.pop('login_flash')
+
+    if request.method == 'POST':
+        login = request.form['login']
+        password = request.form['password']
+
+        account = Account.query.filter_by(login=login).first()
+
+        if account:
+            if account.check_password(password):
+                return 'Успіх'
+        else:
+            session['login_flash'] = ('error', 'Невірний логін або пароль')
+            return redirect(url_for('login'))
+
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # Перевірка на наявність повідомлень у сесії для реєстрації
+    if 'register_flash' in session:
+        category, message = session['register_flash']
+        flash(message, category)
+        session.pop('register_flash')  # Видаляємо повідомлення з сесії після його виведення
+
     if request.method == "POST":
         phone_number = request.form['phone-number']
         company_name = request.form['company-name']
@@ -25,14 +49,14 @@ def register():
         # Перевірка на дублювання назви компанії
         existing_company = Company.query.filter_by(name=company_name).first()
         if existing_company:
-            flash('Компанія з такою назвою вже існує', 'error')
-            return render_template('register.html')
+            session['register_flash'] = ('error', 'Компанія з такою назвою вже існує')
+            return redirect(url_for('register'))
 
         # Перевірка на дублювання номера телефону
         existing_account = Account.query.filter_by(login=phone_number).first()
         if existing_account:
-            flash('Акаунт з таким номером телефону вже існує', 'error')
-            return render_template('register.html')
+            session['register_flash'] = ('error', 'Акаунт з таким номером телефону вже існує')
+            return redirect(url_for('register'))
 
         # Створення нової компанії та акаунта
         company = Company(name=company_name)
@@ -48,9 +72,10 @@ def register():
         db.session.add(account)
         db.session.commit()
 
-        return redirect(url_for('login'))
+        return redirect(url_for('login'))  # Перенаправлення на сторінку логіну
 
     return render_template('register.html')
+
 
 
 if __name__ == '__main__':
