@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Віртуальна виробнича лінія | Реєстрація</title>
-    <link rel="stylesheet" href="../static/styles/register_styles.css">
-    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/register_styles.css') }}"> для Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/register_styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -25,8 +24,7 @@
         <button type="submit">Зареєструватися</button>
     </form>
     <span class="or">або</span>
-    <a href="login.html" class="tab-link">Увійти</a>
-    <!-- {{ url_for('login') }} -->
+    <a href="{{ url_for('login') }}" class="tab-link">Увійти</a>
 </div>
 <script>
     document.getElementById('register-form').addEventListener('submit', function(event) {

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Віртуальна виробнича лінія | Вхід</title>
-    <link rel="stylesheet" href="../static/styles/login_styles.css">
-    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_styles.css') }}"> для Flask -->
+{#    <link rel="stylesheet" href="../static/styles/login_styles.css">#}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
 
 </head>
@@ -24,8 +24,7 @@
         <button type="submit">Увійти</button>
     </form>
     <span class="or">або</span>
-    <a href="register.html" class="tab-link">Зареєструватися</a>
-    <!-- {{ url_for('register') }} -->
+    <a href="{{ url_for('register') }}" class="tab-link">Зареєструватися</a>
 </div>
 
 <script>
