@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Віртуальна виробнича лінія | Вхід</title>
+  <link rel="stylesheet" href="../static/styles/add_employee_styles.css">
+  <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/add_employee_styles.css') }}"> для Flask -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+<header>
+  <div class="nav-container">
+    <a href="#"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="#" class="tab-link">На головну</a>
+  </div>
+  <div class="account-info">
+    <p>Адміністратор</p>
+    <img src="../static/icons/account.png" alt="Адміністратор">
+  </div>
+
+
+</header>
+
+<div class="content-container">
+  <form id="employee-form" class="employee-form">
+    <label for="surname">Прізвище:</label>
+    <input type="text" id="surname" name="surname">
+
+    <label for="name">Ім’я:</label>
+    <input type="text" id="name" name="name">
+
+    <label for="patronymic">По батькові:</label>
+    <input type="text" id="patronymic" name="patronymic">
+
+    <label for="phone">Номер телефону:</label>
+    <input type="tel" id="phone" name="phone">
+
+    <label for="password">Пароль:</label>
+    <input type="password" id="password" name="password">
+
+    <button type="submit">ПІДТВЕРДИТИ</button>
+  </form>
+
+  <div class="photo-block">
+    <div id="photo-display" class="photo-placeholder">Фото відсутнє</div>
+    <div class="photo-buttons">
+      <button id="add-photo-btn" type="button" class="icon-button">
+        <img src="../static/icons/add_photo.png" alt="Додати фото">
+      </button>
+      <button id="delete-photo-btn" type="button" class="delete-photo-btn">
+        <img src="../static/icons/delete_photo.png" alt="Видалити фото">
+      </button>
+
+      <input type="file" id="photo-input" accept="image/*" style="display: none;">
+    </div>
+  </div>
+</div>
+
+<script>
+  const photoInput = document.getElementById('photo-input');
+  const addPhotoBtn = document.getElementById('add-photo-btn');
+  const deletePhotoBtn = document.getElementById('delete-photo-btn');
+  const photoDisplay = document.getElementById('photo-display');
+
+  // Вибір фото
+  addPhotoBtn.addEventListener('click', () => {
+    photoInput.click();
+  });
+
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        photoDisplay.innerHTML = `<img src="${e.target.result}" alt="Фото працівника" class="photo-img">`;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Видалення фото
+  deletePhotoBtn.addEventListener('click', () => {
+    const confirmed = confirm("Видалити фото?");
+    if (confirmed) {
+      photoDisplay.innerHTML = "Фото відсутнє";
+      photoInput.value = ""; // скидання вибору
+    }
+  });
+
+  // Валідація форми
+  document.getElementById('employee-form').addEventListener('submit', function(event) {
+    const surname = document.getElementById('surname').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const patronymic = document.getElementById('patronymic').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    let errors = [];
+
+    if (surname === '') {
+      errors.push('Прізвище не може бути порожнім.');
+    } else if (surname.length < 2) {
+      errors.push('Прізвище має містити щонайменше 2 символи.');
+    }
+
+    if (name === '') {
+      errors.push('Ім\'я не може бути порожнім.');
+    } else if (name.length < 2) {
+      errors.push('Ім\'я має містити щонайменше 2 символи.');
+    }
+
+    if (phone === '') {
+      errors.push('Заповніть поле "Номер телефону".');
+    } else if (!/^\d{10}$/.test(phone)) {
+      errors.push('Номер телефону повинен містити 10 цифр.');
+    }
+
+    if (password === '') {
+      errors.push('Пароль не може бути порожнім.');
+    } else if (password.length < 6) {
+      errors.push('Пароль має містити щонайменше 6 символів.');
+    }
+
+    if (errors.length > 0) {
+      alert(errors.join('\n'));
+      event.preventDefault();
+    }
+  });
+</script>
+
+
+
+</body>
+</html>

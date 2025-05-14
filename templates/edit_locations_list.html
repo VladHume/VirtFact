@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Віртуальна виробнича лінія | Локації</title>
+  <link rel="stylesheet" href="../static/styles/edit_locations_list_styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="nav-container">
+    <a href="#"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="#" class="tab-link">На головну</a>
+  </div>
+  <div class="account-info">
+    <p>Адміністратор</p>
+    <img src="../static/icons/account.png" alt="Адміністратор">
+  </div>
+</header>
+
+<div class="btn-container">
+  <button id="open-modal-btn" class="add-location-btn">
+    <img src="../static/icons/plus.png" alt="" class="add-location-icon">
+    <span class="add-location-text">Додати&nbsp;локацію</span>
+  </button>
+</div>
+
+<div class="locations-list" id="locations-list">
+  <div class="location-line">
+    <div class="location-info">
+      <p>ЧПУ Станок №1</p>
+    </div>
+    <div class="operations">
+      <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+      <button class="delete-location-btn">
+        <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+      </button>
+    </div>
+  </div>
+
+  <div class="location-line">
+    <div class="location-info">
+      <p>Паяльний стіл</p>
+    </div>
+    <div class="operations">
+      <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+      <button class="delete-location-btn">
+        <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальне вікно -->
+<div class="modal" id="add-location-modal">
+  <div class="modal-content">
+    <h3 id="modal-title">Назва локації</h3>
+    <input type="text" id="location-name-input" placeholder="Введіть назву локації">
+    <p id="error-message" class="error-text"></p>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button id="cancel-btn" style="background-color: grey;">Скасувати</button>
+      <button id="confirm-add-btn">Підтвердити</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('add-location-modal');
+  const openModalBtn = document.getElementById('open-modal-btn');
+  const confirmBtn = document.getElementById('confirm-add-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const locationInput = document.getElementById('location-name-input');
+  const errorMessage = document.getElementById('error-message');
+  const modalTitle = document.getElementById('modal-title');
+  const locationsList = document.getElementById('locations-list');
+
+  let editMode = false;
+  let locationToEdit = null;
+
+  openModalBtn.addEventListener('click', () => {
+    showModal('add');
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    const name = locationInput.value.trim();
+
+    if (name.length < 3) {
+      errorMessage.textContent = 'Будь ласка, введіть коректну назву (не менше 3 символів)';
+      return;
+    }
+
+    if (editMode && locationToEdit) {
+      locationToEdit.querySelector('p').textContent = name;
+    } else {
+      const newLocation = createLocationElement(name);
+      locationsList.appendChild(newLocation);
+    }
+
+    modal.style.display = 'none';
+  });
+
+  function showModal(mode, element = null) {
+    modal.style.display = 'flex';
+    locationInput.value = '';
+    errorMessage.textContent = '';
+    editMode = mode === 'edit';
+    locationToEdit = element;
+    modalTitle.textContent = editMode ? 'Редагувати назву локації' : 'Назва локації';
+
+    if (editMode && element) {
+      locationInput.value = element.querySelector('p').textContent;
+    }
+  }
+
+  function createLocationElement(name) {
+    const container = document.createElement('div');
+    container.className = 'location-line';
+    container.innerHTML = `
+      <div class="location-info">
+        <p>${name}</p>
+      </div>
+      <div class="operations">
+        <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+        <button class="delete-location-btn">
+          <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+        </button>
+      </div>
+    `;
+
+    const deleteBtn = container.querySelector('.delete-location-btn');
+    const editBtn = container.querySelector('.edit-location-btn');
+
+    deleteBtn.addEventListener('click', function (event) {
+      if (confirm("Видалити локацію із системи?")) {
+        container.remove();
+      }
+    });
+
+    editBtn.addEventListener('click', function (event) {
+      event.preventDefault();
+      showModal('edit', container);
+    });
+
+    return container;
+  }
+
+
+  document.querySelectorAll('.delete-location-btn').forEach(btn => {
+    btn.addEventListener('click', function (event) {
+      if (confirm("Видалити локацію із системи?")) {
+        btn.closest('.location-line').remove();
+      }
+    });
+  });
+
+  document.querySelectorAll('.edit-location-btn').forEach(btn => {
+    btn.addEventListener('click', function (event) {
+      event.preventDefault();
+      showModal('edit', btn.closest('.location-line'));
+    });
+  });
+
+
+  window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>
