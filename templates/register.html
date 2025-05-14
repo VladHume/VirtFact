@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Віртуальна виробнича лінія | Реєстрація</title>
-    <link rel="stylesheet" href="../static/styles/register_styles.css">
-    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/register_styles.css') }}"> для Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/register_styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -13,7 +12,14 @@
 </header>
 
 <div class="register-container">
-    <form class="register-form" id="register-form" action="" method="post">
+    <form class="register-form" id="register-form" action="/register" method="POST">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
         <h2>Реєстрація</h2>
         <hr>
         <label for="phone-number">Номер телефону:</label>
@@ -25,8 +31,7 @@
         <button type="submit">Зареєструватися</button>
     </form>
     <span class="or">або</span>
-    <a href="login.html" class="tab-link">Увійти</a>
-    <!-- {{ url_for('login') }} -->
+    <a href="{{ url_for('login') }}" class="tab-link">Увійти</a>
 </div>
 <script>
     document.getElementById('register-form').addEventListener('submit', function(event) {
