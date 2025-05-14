@@ -6,7 +6,7 @@ class Account(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     login = db.Column(db.String(64), unique=True, nullable=False)
-    _password = db.Column('password', db.String(128), nullable=False)
+    _password = db.Column('password', db.String(162), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     company_id = db.Column(db.Integer, nullable=True)
 
