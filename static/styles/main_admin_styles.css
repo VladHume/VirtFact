@@ -1,0 +1,338 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+header{
+    display: flex;
+    background-color: #F4F4F4;
+    height: 100px;
+    position: relative;
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+header h1{
+    color: #232323;
+    font-size: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-variant: all-petite-caps;
+}
+
+/* Решта стилів залишаються */
+
+body, html {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.container {
+    display: flex;
+    height: calc(100vh - 100px); /* Враховує висоту хедера */
+}
+
+.sidebar {
+    background-color: #333;
+    color: white;
+    width: 260px;
+    transition: width 0.3s;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+.sidebar.collapsed {
+    width: 60px;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar img {
+    width: 24px;
+    height: 24px;
+}
+
+.sidebar span {
+    transition: opacity 0.3s;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 16px;
+    color: #EFEFEF;
+}
+
+.sidebar.collapsed span {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    transition: margin-left 0.3s;
+    background-color: #F7F7F7;
+
+}
+
+.burger {
+    font-size: 26px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.burger:focus {
+    outline: none;
+}
+
+
+.nav-container{
+    width: auto;
+    height: 100%;
+    margin-left: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.account-info{
+    width: auto;
+    height: 100%;
+    margin-right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.account-info img{
+    width: 36px;
+    height: 36px;
+}
+
+.account-info p{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 16px;
+    color: #232323;
+}
+
+.tasks-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    background-color: #FFFFFF;
+    gap: 5px;
+    padding-bottom: 20px;
+}
+
+
+.head-of-container{
+    top: 0;
+    width: 100%;
+    height: auto;
+    display: flex;
+    position: sticky;
+
+    padding: 10px;
+    background-color: #232323;
+}
+
+.head-of-container p{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 14px;
+    color: #F7F7F7;
+    margin-left: 40px;
+}
+
+.tasks-list{
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+.task-line {
+    display: flex;
+    align-items: center;
+    gap: 20px;             /* Відступ між прогресбаром і назвою */
+    width: 100%;
+    height: 50px;
+    background-color: #F4F4F4;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding-left: 30px;    /* Відступ зліва, як у task-info був margin-left */
+    justify-content: flex-start; /* Вирівнювання вліво */
+}
+
+.task-info {
+    margin-left: 0;         /* Прибираємо лівий відступ, бо вже є padding у task-line */
+    padding: 0 20px;        /* Залишаємо горизонтальний відступ всередині */
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.task-info p{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 14px;
+    color: #232323;
+}
+
+.btn-container {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 20px;
+    padding-top: 30px;
+}
+
+
+.add-task-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #0072CE;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    text-decoration: none;
+    transition: background-color 0.25s ease;
+
+}
+
+.add-task-text{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 14px;
+    color: #F7F7F7;
+    padding: 0 20px;
+}
+
+.more-info-btn {
+    margin-left: auto; /* відсуває вправо */
+    display: flex;
+    align-items: center;
+    padding: 5px 24px;
+    background-color: #0072CE;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.more-info a {
+    text-decoration: none;
+}
+.more-info-text{
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.more-info-btn:focus,
+.more-info-btn:active {
+    text-decoration: none;
+    outline: none;
+}
+
+
+.task-line {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    height: 50px;
+    background-color: #F4F4F4;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.task-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+
+.task-info {
+    margin-left: 0;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.progress-circle {
+    width: 50px;
+    height: 50px;
+    position: relative;
+    flex-shrink: 0;
+
+}
+
+svg {
+    width: 50px;
+    height: 50px;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    stroke-width: 6;
+}
+
+.circle-progress {
+    stroke-dasharray:282.6;
+    stroke-dashoffset:282.6;
+    stroke:#0072CE;
+    stroke-width:10;
+    fill:none;
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    user-select: none;
+    pointer-events: none;
+}
+
+
