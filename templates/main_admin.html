@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Віртуальна виробнича лінія | Головна</title>
-  <link rel="stylesheet" href="../static/styles/main_admin_styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main_admin_styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
   <script defer>
     function toggleMenu() {
@@ -22,7 +22,7 @@
     <h1>Віртуальна виробнича лінія</h1>
   </div>
   <div class="account-info">
-    <p>Адміністратор</p>
+    <p>{{name}}</p>
     <img src="../static/icons/account.png" alt="Адміністратор">
   </div>
 </header>
@@ -37,25 +37,25 @@
         </a>
       </li>
       <li>
-        <a href="edit_materials_list.html">
+        <a href="{{ url_for('edit_materials_list') }}">
           <img src="../static/icons/materials.png" alt="Матеріали">
           <span>Редагувати список матеріалів</span>
         </a>
       </li>
       <li>
-        <a href="edit_tools_list.html">
+        <a href="{{ url_for('edit_tools_list') }}">
           <img src="../static/icons/tools.png" alt="Інструменти">
           <span>Редагувати список інструментів</span>
         </a>
       </li>
       <li>
-        <a href="edit_locations_list.html">
+        <a href="{{ url_for('edit_locations_list') }}">
           <img src="../static/icons/locations.png" alt="Локації">
           <span>Редагувати список локацій</span>
         </a>
       </li>
       <li>
-        <a href="edit_employees_list.html">
+        <a href="{{ url_for('employees') }}">
           <img src="../static/icons/employee.png" alt="Працівники">
           <span>Редагувати список працівників</span>
         </a>

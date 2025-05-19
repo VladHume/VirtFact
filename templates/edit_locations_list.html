@@ -10,8 +10,8 @@
 
 <header>
   <div class="nav-container">
-    <a href="#"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-    <a href="#" class="tab-link">На головну</a>
+    <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
   </div>
   <div class="account-info">
     <p>Адміністратор</p>
@@ -27,29 +27,19 @@
 </div>
 
 <div class="locations-list" id="locations-list">
-  <div class="location-line">
-    <div class="location-info">
-      <p>ЧПУ Станок №1</p>
+  {% for l in locations %}
+    <div class="location-line" data-location-id="{{ l.id }}">
+      <div class="location-info">
+        <p>{{ l.name }}</p>
+      </div>
+      <div class="operations">
+        <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+        <button class="delete-location-btn">
+          <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+        </button>
+      </div>
     </div>
-    <div class="operations">
-      <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-      <button class="delete-location-btn">
-        <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-      </button>
-    </div>
-  </div>
-
-  <div class="location-line">
-    <div class="location-info">
-      <p>Паяльний стіл</p>
-    </div>
-    <div class="operations">
-      <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-      <button class="delete-location-btn">
-        <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-      </button>
-    </div>
-  </div>
+  {% endfor %}
 </div>
 
 <!-- Модальне вікно -->
@@ -65,6 +55,7 @@
   </div>
 </div>
 
+<!-- Усі елементи HTML залишаються без змін, крім <script> -->
 <script>
   const modal = document.getElementById('add-location-modal');
   const openModalBtn = document.getElementById('open-modal-btn');
@@ -86,19 +77,46 @@
     modal.style.display = 'none';
   });
 
-  confirmBtn.addEventListener('click', () => {
+  confirmBtn.addEventListener('click', async () => {
     const name = locationInput.value.trim();
-
     if (name.length < 3) {
       errorMessage.textContent = 'Будь ласка, введіть коректну назву (не менше 3 символів)';
       return;
     }
 
     if (editMode && locationToEdit) {
-      locationToEdit.querySelector('p').textContent = name;
+      const id = locationToEdit.dataset.locationId;
+      try {
+        const response = await fetch(`/edit-location/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (response.ok) {
+          locationToEdit.querySelector('p').textContent = name;
+        } else {
+          console.error('Помилка при редагуванні локації');
+        }
+      } catch (err) {
+        console.error(err);
+      }
     } else {
-      const newLocation = createLocationElement(name);
-      locationsList.appendChild(newLocation);
+      try {
+        const response = await fetch('/add-location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (response.redirected) {
+          window.location.href = response.url;
+          return;
+        }
+
+        const newLocation = createLocationElement(name, null); // ID ще не знаємо
+        locationsList.appendChild(newLocation);
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     modal.style.display = 'none';
@@ -117,56 +135,56 @@
     }
   }
 
-  function createLocationElement(name) {
+  function createLocationElement(name, id = null) {
     const container = document.createElement('div');
     container.className = 'location-line';
+    if (id) container.dataset.locationId = id;
+
     container.innerHTML = `
-      <div class="location-info">
-        <p>${name}</p>
-      </div>
+      <div class="location-info"><p>${name}</p></div>
       <div class="operations">
         <a href="#" class="edit-location-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-        <button class="delete-location-btn">
-          <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-        </button>
+        <button class="delete-location-btn"><img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon"></button>
       </div>
     `;
 
-    const deleteBtn = container.querySelector('.delete-location-btn');
-    const editBtn = container.querySelector('.edit-location-btn');
-
-    deleteBtn.addEventListener('click', function (event) {
-      if (confirm("Видалити локацію із системи?")) {
-        container.remove();
-      }
-    });
-
-    editBtn.addEventListener('click', function (event) {
-      event.preventDefault();
-      showModal('edit', container);
-    });
-
+    attachHandlers(container);
     return container;
   }
 
+  function attachHandlers(container) {
+    const deleteBtn = container.querySelector('.delete-location-btn');
+    const editBtn = container.querySelector('.edit-location-btn');
 
-  document.querySelectorAll('.delete-location-btn').forEach(btn => {
-    btn.addEventListener('click', function (event) {
-      if (confirm("Видалити локацію із системи?")) {
-        btn.closest('.location-line').remove();
+    deleteBtn.addEventListener('click', async () => {
+      if (!confirm("Видалити локацію із системи?")) return;
+
+      const id = container.dataset.locationId;
+      try {
+        const response = await fetch(`/delete-location/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          container.remove();
+        } else {
+          console.error('Помилка при видаленні');
+        }
+      } catch (err) {
+        console.error(err);
       }
     });
-  });
 
-  document.querySelectorAll('.edit-location-btn').forEach(btn => {
-    btn.addEventListener('click', function (event) {
+    editBtn.addEventListener('click', (event) => {
       event.preventDefault();
-      showModal('edit', btn.closest('.location-line'));
+      showModal('edit', container);
     });
+  }
+
+  // Додати обробники для існуючих елементів
+  document.querySelectorAll('.location-line').forEach(line => {
+    attachHandlers(line);
   });
 
-
-  window.addEventListener('click', function(event) {
+  // Закриття модального по кліку поза вікном
+  window.addEventListener('click', function (event) {
     if (event.target === modal) {
       modal.style.display = 'none';
     }
