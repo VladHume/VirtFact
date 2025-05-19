@@ -10,8 +10,8 @@
 
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
         <p>Адміністратор</p>
@@ -27,29 +27,19 @@
 </div>
 
 <div class="materials-list" id="materials-list">
-    <div class="material-line">
-        <div class="material-info">
-            <p>Карбон</p>
+    {% for m in materials %}
+        <div class="material-line" data-material-id="{{ m.id }}">
+            <div class="material-info">
+                <p>{{m.name}}</p>
+            </div>
+            <div class="operations">
+                <a href="#" class="edit-material-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+                <button class="delete-material-btn">
+                    <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+                </button>
+            </div>
         </div>
-        <div class="operations">
-            <a href="#" class="edit-material-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-            <button class="delete-material-btn">
-                <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-            </button>
-        </div>
-    </div>
-
-    <div class="material-line">
-        <div class="material-info">
-            <p>Карбон</p>
-        </div>
-        <div class="operations">
-            <a href="#" class="edit-material-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-            <button class="delete-material-btn">
-                <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-            </button>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
 <!-- Модальне вікно -->
@@ -86,22 +76,58 @@
         modal.style.display = 'none';
     });
 
-    confirmBtn.addEventListener('click', () => {
+    confirmBtn.addEventListener('click', async () => {
         const name = materialInput.value.trim();
-
         if (name.length < 3) {
             errorMessage.textContent = 'Будь ласка, введіть коректну назву (не менше 3 символів)';
             return;
         }
 
         if (editMode && materialToEdit) {
-            materialToEdit.querySelector('p').textContent = name;
-        } else {
-            const newMaterial = createMaterialElement(name);
-            materialsList.appendChild(newMaterial);
-        }
+            const id = materialToEdit.dataset.materialId;
 
-        modal.style.display = 'none';
+            try {
+                const response = await fetch(`/edit-material/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+
+                if (response.ok) {
+                    materialToEdit.querySelector('p').textContent = name;
+                    modal.style.display = 'none';
+                } else {
+                    errorMessage.textContent = 'Не вдалося оновити матеріал';
+                }
+            } catch (err) {
+                errorMessage.textContent = 'Помилка з’єднання з сервером';
+            }
+
+        } else {
+            try {
+                const response = await fetch('/add-material', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();  // Очікуємо id нового матеріалу
+                    const newMaterial = createMaterialElement(data.id, name);
+                    materialsList.appendChild(newMaterial);
+                    modal.style.display = 'none';
+                } else {
+                    errorMessage.textContent = 'Сталася помилка при додаванні матеріалу';
+                }
+
+            } catch (error) {
+                errorMessage.textContent = 'Не вдалося надіслати дані на сервер';
+            }
+        }
     });
 
     function showModal(mode, element = null) {
@@ -117,27 +143,47 @@
         }
     }
 
-    function createMaterialElement(name) {
+    function createMaterialElement(id, name) {
         const container = document.createElement('div');
         container.className = 'material-line';
+        container.dataset.materialId = id;
         container.innerHTML = `
-      <div class="material-info">
-        <p>${name}</p>
-      </div>
-      <div class="operations">
-        <a href="#" class="edit-material-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-        <button class="delete-material-btn">
-          <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-        </button>
-      </div>
-    `;
+            <div class="material-info">
+                <p>${name}</p>
+            </div>
+            <div class="operations">
+                <a href="#" class="edit-material-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+                <button class="delete-material-btn">
+                    <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+                </button>
+            </div>
+        `;
 
+        attachEditDeleteHandlers(container);
+        return container;
+    }
+
+    function attachEditDeleteHandlers(container) {
         const deleteBtn = container.querySelector('.delete-material-btn');
         const editBtn = container.querySelector('.edit-material-btn');
 
-        deleteBtn.addEventListener('click', function (event) {
-            if (confirm("Видалити матеріал із системи?")) {
-                container.remove();
+        deleteBtn.addEventListener('click', async function () {
+            if (!confirm("Видалити матеріал із системи?")) return;
+
+            const id = container.dataset.materialId;
+
+            try {
+                const response = await fetch(`/delete-material/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    container.remove();
+                } else {
+                    alert("Не вдалося видалити матеріал");
+                }
+            } catch (err) {
+                alert("Помилка з’єднання з сервером");
             }
         });
 
@@ -145,31 +191,21 @@
             event.preventDefault();
             showModal('edit', container);
         });
-
-        return container;
     }
 
-    document.querySelectorAll('.delete-material-btn').forEach(btn => {
-        btn.addEventListener('click', function (event) {
-            if (confirm("Видалити матеріал із системи?")) {
-                btn.closest('.material-line').remove();
-            }
-        });
+    // Ініціалізувати події для вже існуючих елементів
+    document.querySelectorAll('.material-line').forEach(container => {
+        attachEditDeleteHandlers(container);
     });
 
-    document.querySelectorAll('.edit-material-btn').forEach(btn => {
-        btn.addEventListener('click', function (event) {
-            event.preventDefault();
-            showModal('edit', btn.closest('.material-line'));
-        });
-    });
-
-    window.addEventListener('click', function(event) {
+    // Закрити модал при кліку поза ним
+    window.addEventListener('click', function (event) {
         if (event.target === modal) {
             modal.style.display = 'none';
         }
     });
 </script>
+
 
 </body>
 </html>

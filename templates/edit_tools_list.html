@@ -10,8 +10,8 @@
 
 <header>
   <div class="nav-container">
-    <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-    <a href="main_admin.html" class="tab-link">На головну</a>
+    <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
   </div>
   <div class="account-info">
     <p>Адміністратор</p>
@@ -27,29 +27,19 @@
 </div>
 
 <div class="tools-list" id="tools-list">
-  <div class="tool-line">
-    <div class="tool-info">
-      <p>Паяльник</p>
-    </div>
-    <div class="operations">
-      <a href="#" class="edit-tool-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-      <button class="delete-tool-btn">
-        <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-      </button>
-    </div>
-  </div>
-
-  <div class="tool-line">
-    <div class="tool-info">
-      <p>Паяльник</p>
-    </div>
-    <div class="operations">
-      <a href="#" class="edit-tool-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-      <button class="delete-tool-btn">
-        <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-      </button>
-    </div>
-  </div>
+    {% for t in tools %}
+      <div class="tool-line" data-tool-id="{{ t.id }}">
+        <div class="tool-info">
+          <p>{{ t.name }}</p>
+        </div>
+        <div class="operations">
+          <a href="#" class="edit-tool-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+          <button class="delete-tool-btn">
+            <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+          </button>
+        </div>
+      </div>
+    {% endfor %}
 </div>
 
 <!-- Модальне вікно -->
@@ -86,91 +76,134 @@
     modal.style.display = 'none';
   });
 
-  confirmBtn.addEventListener('click', () => {
-    const name = toolInput.value.trim();
+  confirmBtn.addEventListener('click', async () => {
+        const name = toolInput.value.trim();
+        if (name.length < 3) {
+            errorMessage.textContent = 'Будь ласка, введіть коректну назву (не менше 3 символів)';
+            return;
+        }
 
-    if (name.length < 3) {
-      errorMessage.textContent = 'Будь ласка, введіть коректну назву (не менше 3 символів)';
-      return;
-    }
+        if (editMode && toolToEdit) {
+            const id = toolToEdit.dataset.toolId;
 
-    if (editMode && toolToEdit) {
-      toolToEdit.querySelector('p').textContent = name;
-    } else {
-      const newTool = createToolElement(name);
-      toolsList.appendChild(newTool);
-    }
+            try {
+                const response = await fetch(`/edit-tool/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
 
-    modal.style.display = 'none';
-  });
+                if (response.ok) {
+                    toolToEdit.querySelector('p').textContent = name;
+                    modal.style.display = 'none';
+                } else {
+                    errorMessage.textContent = 'Не вдалося оновити інструмент';
+                }
+            } catch (err) {
+                errorMessage.textContent = 'Помилка з’єднання з сервером';
+            }
 
-  function showModal(mode, element = null) {
-    modal.style.display = 'flex';
-    toolInput.value = '';
-    errorMessage.textContent = '';
-    editMode = mode === 'edit';
-    toolToEdit = element;
-    modalTitle.textContent = editMode ? 'Редагувати назву інструмента' : 'Назва інструмента';
+        } else {
+            try {
+                const response = await fetch('/add-tool', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
 
-    if (editMode && element) {
-      toolInput.value = element.querySelector('p').textContent;
-    }
-  }
+                if (response.ok) {
+                    const data = await response.json();  // Очікуємо id нового матеріалу
+                    const newTool = createToolElement(data.id, name);
+                    toolsList.appendChild(newTool);
+                    modal.style.display = 'none';
+                } else {
+                    errorMessage.textContent = 'Сталася помилка при додаванні інструменту';
+                }
 
-  function createToolElement(name) {
-    const container = document.createElement('div');
-    container.className = 'tool-line';
-    container.innerHTML = `
-      <div class="tool-info">
-        <p>${name}</p>
-      </div>
-      <div class="operations">
-        <a href="#" class="edit-tool-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-        <button class="delete-tool-btn">
-          <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-        </button>
-      </div>
-    `;
-
-    const deleteBtn = container.querySelector('.delete-tool-btn');
-    const editBtn = container.querySelector('.edit-tool-btn');
-
-    deleteBtn.addEventListener('click', function (event) {
-      if (confirm("Видалити інструмент із системи?")) {
-        container.remove();
-      }
+            } catch (error) {
+                errorMessage.textContent = 'Не вдалося надіслати дані на сервер';
+            }
+        }
     });
 
-    editBtn.addEventListener('click', function (event) {
-      event.preventDefault();
-      showModal('edit', container);
-    });
+    function showModal(mode, element = null) {
+        modal.style.display = 'flex';
+        toolInput.value = '';
+        errorMessage.textContent = '';
+        editMode = mode === 'edit';
+        toolToEdit = element;
+        modalTitle.textContent = editMode ? 'Редагувати назву інструменту' : 'Назва інструменту';
 
-    return container;
-  }
-
-
-  document.querySelectorAll('.delete-tool-btn').forEach(btn => {
-    btn.addEventListener('click', function (event) {
-      if (confirm("Видалити інструмент із системи?")) {
-        btn.closest('.tool-line').remove();
-      }
-    });
-  });
-
-  document.querySelectorAll('.edit-tool-btn').forEach(btn => {
-    btn.addEventListener('click', function (event) {
-      event.preventDefault();
-      showModal('edit', btn.closest('.tool-line'));
-    });
-  });
-
-
-  window.addEventListener('click', function(event) {
-    if (event.target === modal) {
-      modal.style.display = 'none';
+        if (editMode && element) {
+            toolInput.value = element.querySelector('p').textContent;
+        }
     }
-  });
+
+    function createToolElement(id, name) {
+        const container = document.createElement('div');
+        container.className = 'tool-line';
+        container.dataset.toolId = id;
+        container.innerHTML = `
+            <div class="tool-info">
+                <p>${name}</p>
+            </div>
+            <div class="operations">
+                <a href="#" class="edit-tool-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+                <button class="delete-tool-btn">
+                    <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+                </button>
+            </div>
+        `;
+
+        attachEditDeleteHandlers(container);
+        return container;
+    }
+
+    function attachEditDeleteHandlers(container) {
+        const deleteBtn = container.querySelector('.delete-tool-btn');
+        const editBtn = container.querySelector('.edit-tool-btn');
+
+        deleteBtn.addEventListener('click', async function () {
+            if (!confirm("Видалити інструмент із системи?")) return;
+
+            const id = container.dataset.toolId;
+
+            try {
+                const response = await fetch(`/delete-tool/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    container.remove();
+                } else {
+                    alert("Не вдалося видалити інструмент");
+                }
+            } catch (err) {
+                alert("Помилка з’єднання з сервером");
+            }
+        });
+
+        editBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            showModal('edit', container);
+        });
+    }
+
+    // Ініціалізувати події для вже існуючих елементів
+    document.querySelectorAll('.tool-line').forEach(container => {
+        attachEditDeleteHandlers(container);
+    });
+
+    // Закрити модал при кліку поза ним
+    window.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
 </script>
 
 </body>

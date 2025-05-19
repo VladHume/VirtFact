@@ -3,58 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <title>Віртуальна виробнича лінія | Працівники</title>
-    <link rel="stylesheet" href="../static/styles/edit_employees_list_styles.css">
-    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/edit_employees_list_styles.css') }}"> для Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/edit_employees_list_styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
 
 </head>
 <body>
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
-        <p>Адміністратор</p>
+        <p>{{name}}</p>
         <img src="../static/icons/account.png" alt="Адміністратор">
     </div>
     
 
 </header>
 <div class="btn-container">
-    <a href="add_employee.html" class="add-employee-btn">
+    <a href="{{ url_for('add_employee') }}" class="add-employee-btn">
         <img src="../static/icons/plus.png" alt="" class="add-employee-icon">
         <span class="add-employee-text">Додати&nbsp;працівника</span>
     </a>
 </div>
-
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 <div class="employees-list">
-    <div class="employee-line">
-        <div class="employee-info">
-            <img src="../static/icons/account.png" alt="">
-            <p>Гуменюк Владислав Васильович</p>
-        </div>
+    {% for emp in employees %}
+        <div class="employee-line" data-employee-id="{{ emp.id }}">
+            <div class="employee-info">
+                <img src="../static/icons/account.png" alt="">
+                <p>{{ emp.surname }} {{ emp.name }} {{ emp.middle_name }}</p>
+            </div>
 
-        <div class="operations">
-            <a href="edit_employee_info.html"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-            <button class="delete-employee-btn">
-                <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-            </button>
+            <div class="operations">
+                <a href="{{ url_for('edit_employee', employee_id=emp.id) }}">
+                    <img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon">
+                </a>
+                <button class="delete-employee-btn">
+                    <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
+                </button>
+            </div>
         </div>
-    </div>
-    <div class="employee-line">
-        <div class="employee-info">
-            <img src="../static/icons/account.png" alt="">
-            <p>Вдовина Анастасія Валеріївна</p>
-        </div>
-
-        <div class="operations">
-            <a href="#"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-            <button class="delete-employee-btn">
-                <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-            </button>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
 <script>
@@ -63,20 +59,32 @@
     deleteButtons.forEach(button => {
         button.addEventListener('click', function(event) {
             const confirmed = confirm("Видалити користувача із системи?");
-            if (confirmed) {
-                const employeeLine = button.closest('.employee-line');
-                if (employeeLine) {
-                    employeeLine.remove();
+            if (!confirmed) return;
+
+            const employeeLine = button.closest('.employee-line');
+            const employeeId = employeeLine.dataset.employeeId;
+
+            fetch(`/delete_employee/${employeeId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 }
-                // місце для логіки запиту на сервер
-                console.log("Користувача видалено");
-            } else {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            })
+            .then(response => {
+                if (response.ok) {
+                    employeeLine.remove();
+                } else {
+                    alert('Помилка при видаленні працівника.');
+                }
+            })
+            .catch(err => {
+                console.error('Помилка:', err);
+                alert('Помилка з’єднання з сервером.');
+            });
         });
     });
 </script>
+
 
 
 

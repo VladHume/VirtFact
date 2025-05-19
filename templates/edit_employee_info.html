@@ -2,57 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Віртуальна виробнича лінія | Вхід</title>
-    <link rel="stylesheet" href="../static/styles/edit_employee_info_styles.css">
-    <!--<link rel="stylesheet" href="{{ url_for('static', filename='styles/edit_employee_info_styles.css') }}"> для Flask -->
+    <title>Віртуальна виробнича лінія | Редагування працівника</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/edit_employee_info_styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
-
 </head>
 <body>
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='icons/home.png') }}" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
-        <p>Адміністратор</p>
-        <img src="../static/icons/account.png" alt="Адміністратор">
+        <p>{{ name }}</p>
+        <img src="{{ url_for('static', filename='icons/account.png') }}" alt="Адміністратор">
     </div>
-
-
 </header>
 
 <div class="content-container">
-    <form id="employee-form" class="employee-form">
+    <form id="employee-form" class="employee-form" method="POST" enctype="multipart/form-data" action="{{ url_for('edit_employee', employee_id=employee.id) }}">
+
         <label for="surname">Прізвище:</label>
-        <input type="text" id="surname" name="surname">
+        <input type="text" id="surname" name="surname" value="{{ employee.surname }}">
 
         <label for="name">Ім’я:</label>
-        <input type="text" id="name" name="name">
+        <input type="text" id="name" name="name" value="{{ employee.name }}">
 
         <label for="patronymic">По батькові:</label>
-        <input type="text" id="patronymic" name="patronymic">
+        <input type="text" id="patronymic" name="patronymic" value="{{ employee.middle_name }}">
 
         <label for="phone">Номер телефону:</label>
-        <input type="tel" id="phone" name="phone">
+        <input type="tel" id="phone" name="phone" value="{{ employee.phone_number }}">
 
         <label for="password">Пароль:</label>
-        <input type="password" id="password" name="password">
+        <input type="password" id="password" name="password" placeholder="Залиште порожнім для збереження старого паролю">
+
+
+            <input type="file" id="photo-input" name="photo" accept="image/*" style="display: none;">
 
         <button type="submit">ПІДТВЕРДИТИ</button>
     </form>
 
     <div class="photo-block">
-        <div id="photo-display" class="photo-placeholder">Фото відсутнє</div>
+        <div id="photo-display" class="photo-placeholder">
+            {% if employee.photo_path %}
+                <img src="{{ url_for('static', filename=employee.photo_path.replace('\\', '/').replace('static/', '')) }}" alt="Фото працівника" class="photo-img">
+            {% else %}
+                Фото відсутнє
+            {% endif %}
+        </div>
         <div class="photo-buttons">
             <button id="add-photo-btn" type="button" class="icon-button">
-                <img src="../static/icons/add_photo.png" alt="Додати фото">
+                <img src="{{ url_for('static', filename='icons/add_photo.png') }}" alt="Додати фото">
             </button>
             <button id="delete-photo-btn" type="button" class="delete-photo-btn">
-                <img src="../static/icons/delete_photo.png" alt="Видалити фото">
+                <img src="{{ url_for('static', filename='icons/delete_photo.png') }}" alt="Видалити фото">
             </button>
-
-            <input type="file" id="photo-input" accept="image/*" style="display: none;">
         </div>
     </div>
 </div>
@@ -63,7 +67,6 @@
     const deletePhotoBtn = document.getElementById('delete-photo-btn');
     const photoDisplay = document.getElementById('photo-display');
 
-    // Вибір фото
     addPhotoBtn.addEventListener('click', () => {
         photoInput.click();
     });
@@ -79,16 +82,14 @@
         }
     });
 
-    // Видалення фото
     deletePhotoBtn.addEventListener('click', () => {
         const confirmed = confirm("Видалити фото?");
         if (confirmed) {
             photoDisplay.innerHTML = "Фото відсутнє";
-            photoInput.value = ""; // скидання вибору
+            photoInput.value = "";
         }
     });
 
-    // Валідація форми
     document.getElementById('employee-form').addEventListener('submit', function(event) {
         const surname = document.getElementById('surname').value.trim();
         const name = document.getElementById('name').value.trim();
@@ -98,28 +99,15 @@
 
         let errors = [];
 
-        if (surname === '') {
-            errors.push('Прізвище не може бути порожнім.');
-        } else if (surname.length < 2) {
-            errors.push('Прізвище має містити щонайменше 2 символи.');
-        }
-
-        if (name === '') {
-            errors.push('Ім\'я не може бути порожнім.');
-        } else if (name.length < 2) {
-            errors.push('Ім\'я має містити щонайменше 2 символи.');
-        }
-
+        if (surname === '') errors.push('Прізвище не може бути порожнім.');
+        if (name === '') errors.push('Ім\'я не може бути порожнім.');
         if (phone === '') {
-            errors.push('Заповніть поле "Номер телефону".');
+            errors.push('Номер телефону обов’язковий.');
         } else if (!/^\d{10}$/.test(phone)) {
-            errors.push('Номер телефону повинен містити 10 цифр.');
+            errors.push('Номер телефону має містити 10 цифр.');
         }
-
-        if (password === '') {
-            errors.push('Пароль не може бути порожнім.');
-        } else if (password.length < 6) {
-            errors.push('Пароль має містити щонайменше 6 символів.');
+        if (password !== '' && password.length < 6) {
+            errors.push('Новий пароль має містити щонайменше 6 символів.');
         }
 
         if (errors.length > 0) {
@@ -128,8 +116,5 @@
         }
     });
 </script>
-
-
-
 </body>
 </html>
