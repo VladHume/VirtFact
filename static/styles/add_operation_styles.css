@@ -1,0 +1,197 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: #ffffff;
+}
+
+header {
+    display: flex;
+    background-color: #F4F4F4;
+    height: 100px;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.tab-link {
+    font-weight: 600;
+    font-size: 20px;
+    color: #232323;
+    text-decoration: none;
+    font-variant: all-petite-caps;
+}
+
+.tab-link:hover {
+    text-decoration: underline;
+}
+
+.tab-link-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.account-info img {
+    width: 36px;
+    height: 36px;
+}
+
+.account-info p {
+    font-weight: 600;
+    font-size: 16px;
+    color: #232323;
+}
+
+main.operation-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 30px 40px;
+    gap: 40px;
+}
+
+.form-section, .instruction-section {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    padding: 20px;
+    flex: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-section h3,
+.instruction-section h4 {
+    margin-top: 0;
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+select {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.upload-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    border: 1px solid #004080;
+    background-color: #f0f8ff;
+    color: #004080;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 0;
+}
+
+.upload-btn:hover {
+    background-color: #e6f2ff;
+}
+
+.btn-container {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.confirm-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #0072CE;
+    color: white;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.confirm-btn:hover {
+    background-color: #0059b3;
+}
+
+.checkbox-group {
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #fafafa;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.file-list {
+    list-style-type: none;
+    padding-left: 20px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.file-list li a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+.file-list li a:hover {
+    text-decoration: underline;
+}
+
+.upload-group {
+    margin-bottom: 15px;
+}
+
+.checkbox-group {
+    max-height: 120px; /* приблизно на 3 елементи */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    background-color: #f9f9f9;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.select-block input[type="text"] {
+    width: 100%;
+    padding: 6px 10px;
+    margin: 6px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+

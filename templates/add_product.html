@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Додати виріб</title>
+  <link rel="stylesheet" href="../static/styles/add_product_styles.css">
+</head>
+<body>
+
+<header>
+  <div class="nav-container">
+    <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="main_admin.html" class="tab-link">На головну</a>
+  </div>
+  <div class="account-info">
+    <p>Адміністратор</p>
+    <img src="../static/icons/account.png" alt="Адміністратор">
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="left-panel">
+    <div class="add-form" id="productForm">
+      <input type="text" id="productName" placeholder="Введіть назву виробу">
+      <button class="add-btn" id="addProductBtn"><img src="../static/icons/plus.png">Додати виріб</button>
+    </div>
+    <div id="hierarchyContainer"></div>
+  </div>
+
+  <div class="right-panel" id="operationPanel">
+    <h3 id="operationTitle">Операції</h3>
+    <div id="operationList" class="operations-list">
+
+    </div>
+    <div class="operation-footer">
+      <button class="add-btn" onclick="window.location.href='add_operation.html'">
+        <img src="../static/icons/plus.png">Додати операцію
+      </button>
+    </div>
+  </div>
+</main>
+<div class="btn-container">
+  <button class="confirm-btn" id="confirmBtn">Підтвердити</button>
+</div>
+
+
+<script>
+  let productAdded = false;
+  const hierarchyContainer = document.getElementById("hierarchyContainer");
+  const operationPanel = document.getElementById("operationPanel");
+  const operationTitle = document.getElementById("operationTitle");
+  const operationList = document.getElementById("operationList");
+  const productForm = document.getElementById("productForm");
+
+  const addProductBtn = document.getElementById("addProductBtn");
+  addProductBtn.addEventListener("click", () => {
+    const input = document.getElementById("productName");
+    const name = input.value.trim();
+    if (!name || productAdded) {
+      input.classList.add("invalid");
+      return;
+    }
+    input.classList.remove("invalid");
+
+    const productWrapper = document.createElement("div");
+    productWrapper.className = "product-wrapper";
+
+    const productRow = document.createElement("div");
+    productRow.className = "item-row";
+
+    const productDiv = createElement("div", "product", name);
+    productDiv.addEventListener("click", () => showOperations(name, "Виріб"));
+
+    const addBlockBtn = createSideButton("Додати блок", () => {
+      const blockName = prompt("Введіть назву блоку:");
+      if (!blockName) return;
+
+      const blockWrapper = document.createElement("div");
+      blockWrapper.className = "block-wrapper";
+
+      const blockRow = document.createElement("div");
+      blockRow.className = "item-row";
+
+      const blockDiv = createElement("div", "block", blockName);
+      blockDiv.addEventListener("click", () => showOperations(blockName, "Блок"));
+
+      const addDetailBtn = createSideButton("Додати деталь", () => {
+        const detailName = prompt("Введіть назву деталі:");
+        if (!detailName) return;
+
+        const detailRow = document.createElement("div");
+        detailRow.className = "item-row";
+
+        const detailDiv = createElement("div", "detail", detailName);
+        detailDiv.addEventListener("click", () => showOperations(detailName, "Деталь"));
+
+        detailRow.appendChild(detailDiv);
+        blockWrapper.appendChild(detailRow);
+      });
+
+      blockRow.appendChild(blockDiv);
+      blockRow.appendChild(addDetailBtn);
+      blockWrapper.appendChild(blockRow);
+      productWrapper.appendChild(blockWrapper);
+    });
+
+    productRow.appendChild(productDiv);
+    productRow.appendChild(addBlockBtn);
+    productWrapper.appendChild(productRow);
+    hierarchyContainer.appendChild(productWrapper);
+
+    productForm.style.display = "none";
+    productAdded = true;
+  });
+
+  function createElement(tag, className, text) {
+    const el = document.createElement(tag);
+    el.className = className;
+    el.textContent = text;
+    return el;
+  }
+
+  function createSideButton(label, callback) {
+    const btn = document.createElement("button");
+    btn.className = "add-btn side-btn";
+    btn.innerHTML = `<img src="../static/icons/plus.png">${label}`;
+    btn.onclick = callback;
+    return btn;
+  }
+
+  function showOperations(name, type) {
+    operationPanel.style.display = "flex";
+    operationTitle.textContent = `${type}: ${name}`;
+    operationList.innerHTML = '<p class="operation-placeholder">Операцій ще не додано</p>';
+
+    const storedOp = sessionStorage.getItem("newOperation");
+    if (storedOp) {
+      const op = JSON.parse(storedOp);
+      const opEl = document.createElement("div");
+      opEl.textContent = `Операція: ${op.location} (інструментів: ${op.tools.length}, матеріалів: ${op.materials.length})`;
+      operationList.appendChild(opEl);
+      sessionStorage.removeItem("newOperation");
+    }
+
+  }
+
+  function renderAddedOperations() {
+    const operationsList = document.getElementById('operationsList');
+    operationsList.innerHTML = '';
+
+    const operation = JSON.parse(sessionStorage.getItem('newOperation'));
+    if (!operation) return;
+
+    const div = document.createElement('div');
+    div.className = 'product-line';
+
+    const info = document.createElement('div');
+    info.className = 'product-info';
+
+    const productText = document.createElement('p');
+    productText.textContent = `Локація: ${operation.product}`;
+
+    const toolsText = document.createElement('p');
+    toolsText.textContent = `Інструменти: ${operation.tools.join(', ') || 'немає'}`;
+
+    const materialsText = document.createElement('p');
+    materialsText.textContent = `Матеріали: ${operation.materials.join(', ') || 'немає'}`;
+
+    info.append(productText, toolsText, materialsText);
+
+    const ops = document.createElement('div');
+    ops.className = 'operations';
+
+    const editBtn = document.createElement('a');
+    editBtn.href = '#'; // або посилання на сторінку редагування
+    editBtn.className = 'edit-product-btn';
+    editBtn.innerHTML = '<img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon">';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-producttion-btn';
+    delBtn.innerHTML = '<img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">';
+    delBtn.onclick = () => {
+      sessionStorage.removeItem('newOperation');
+      renderAddedOperations();
+    };
+
+    ops.append(editBtn, delBtn);
+    div.append(info, ops);
+    operationsList.appendChild(div);
+  }
+
+  window.onload = function () {
+    renderAddedOperations();
+  };
+
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Додати операцію</title>
+    <link rel="stylesheet" href="../static/styles/add_operation_styles.css">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="main_admin.html" class="tab-link">На головну</a>
+    </div>
+    <div class="account-info">
+        <img src="../static/icons/account.png" alt="Адміністратор">
+    </div>
+</header>
+
+<main class="operation-container">
+    <div class="form-section">
+        <h3>Блок 1: Додати операцію</h3>
+        <div class="select-block">
+            <label for="operationName">Введіть назву операції:</label>
+            <input type="text" id="operationName" placeholder="Назва операції">
+        </div>
+
+
+        <label for="locationSelect">Оберіть локацію:</label>
+        <select id="locationSelect">
+            <!-- Заповниться через JavaScript -->
+        </select>
+
+        <div class="select-block">
+            <label>Вкажіть інструменти:</label>
+            <input type="text" placeholder="Пошук інструментів..." oninput="filterCheckboxes('toolsCheckboxes', this.value)">
+            <div id="toolsCheckboxes" class="checkbox-group"></div>
+        </div>
+
+        <div class="select-block">
+            <label>Вкажіть матеріали:</label>
+            <input type="text" placeholder="Пошук матеріалів..." oninput="filterCheckboxes('materialsCheckboxes', this.value)">
+            <div id="materialsCheckboxes" class="checkbox-group"></div>
+        </div>
+
+        <div class="select-block">
+            <label>Вкажіть залежні блоки:</label>
+            <input type="text" placeholder="Пошук блоків..." oninput="filterCheckboxes('dependencyCheckboxes', this.value)">
+            <div id="dependencyCheckboxes" class="checkbox-group"></div>
+        </div>
+
+    </div>
+
+    <div class="instruction-section">
+        <h4>Інструкції:</h4>
+
+        <div class="upload-group">
+            <button onclick="uploadFile('text/pdf', 'pdfList')" class="upload-btn">📎 Прикріпити текстову інструкцію</button>
+            <ul id="pdfList" class="file-list"></ul>
+        </div>
+
+        <div class="upload-group">
+            <button onclick="uploadFile('video/mp4', 'videoList')" class="upload-btn">📎 Прикріпити відео-інструкцію</button>
+            <ul id="videoList" class="file-list"></ul>
+        </div>
+
+        <div class="upload-group">
+            <button onclick="uploadFile('image/png', 'imageList', true)" class="upload-btn">📎 Надати приклади готового блоку</button>
+            <ul id="imageList" class="file-list"></ul>
+        </div>
+
+        <input type="file" id="fileInput" style="display:none" multiple>
+    </div>
+
+</main>
+
+
+<div class="btn-container">
+    <button class="confirm-btn" onclick="submitOperation()">ПІДТВЕРДИТИ</button>
+</div>
+
+<script>
+    const locations = ["Цех 1", "Цех 2", "Цех 3"];
+    const tools = ["Молоток", "Дриль", "Викрутка"];
+    const materials = ["Дерево", "Метал", "Пластик"];
+    const dependencies = ["Блок А", "Блок Б", "Блок В"];
+
+    window.onload = () => {
+        populateSelect("locationSelect", locations);
+        populateCheckboxes("toolsCheckboxes", tools);
+        populateCheckboxes("materialsCheckboxes", materials);
+        populateCheckboxes("dependencyCheckboxes", dependencies); // Додано!
+    };
+
+
+
+    function populateSelect(id, items) {
+        const select = document.getElementById(id);
+        items.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item;
+            option.textContent = item;
+            select.appendChild(option);
+        });
+    }
+
+    function populateCheckboxes(id, items) {
+        const container = document.getElementById(id);
+        container.innerHTML = ""; // очистити, якщо треба перезаповнити
+        items.forEach(item => {
+            const label = document.createElement("label");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = item;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(" " + item));
+            container.appendChild(label);
+        });
+    }
+
+    function filterCheckboxes(containerId, query) {
+        const container = document.getElementById(containerId);
+        const checkboxes = container.querySelectorAll("label");
+        const lowerQuery = query.toLowerCase();
+
+        checkboxes.forEach(label => {
+            const text = label.textContent.toLowerCase();
+            label.style.display = text.includes(lowerQuery) ? "block" : "none";
+        });
+    }
+
+
+
+
+    function uploadFile(acceptType, listId, multiple = false) {
+        const input = document.getElementById("fileInput");
+        input.accept = acceptType;
+        input.multiple = multiple;
+
+        input.onchange = () => {
+            const list = document.getElementById(listId);
+            [...input.files].forEach(file => {
+                const listItem = document.createElement("li");
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(file);
+                link.textContent = file.name;
+                link.target = "_blank";
+                listItem.appendChild(link);
+                list.appendChild(listItem);
+            });
+            input.value = ""; // очистити input, щоб можна було вибрати ті ж файли ще раз
+        };
+
+        input.click();
+    }
+
+
+    function getCheckedValues(containerId) {
+        const checkboxes = document.querySelectorAll(`#${containerId} input[type="checkbox"]`);
+        return Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    }
+
+    function submitOperation() {
+        const location = document.getElementById("locationSelect").value;
+        const tools = getCheckedValues("toolsCheckboxes");
+        const materials = getCheckedValues("materialsCheckboxes");
+        const dependencies = getCheckedValues("dependencyCheckboxes");
+        const name = document.getElementById("operationName").value.trim();
+
+
+        const operation = {
+            name,
+            location,
+            tools,
+            materials,
+            dependencies
+        };
+
+
+        sessionStorage.setItem("newOperation", JSON.stringify(operation));
+        window.location.href = "add_product.html"; // або history.back()
+    }
+</script>
+
+
+</body>
+</html>
