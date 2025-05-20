@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Призначити завдання</title>
+    <link rel="stylesheet" href="../static/styles/assign_task_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="main_admin.html" class="tab-link">На головну</a>
+    </div>
+    <div class="account-info">
+        <p>Адміністратор</p>
+        <img src="../static/icons/account.png" alt="Адміністратор">
+    </div>
+</header>
+
+<main class="main-container">
+    <div class="left-panel">
+        <div class="product-wrapper">
+            <div class="item-row">
+                <div class="product">Виріб 1</div>
+
+            </div>
+
+            <div class="block-wrapper">
+                <div class="item-row">
+                    <div class="block">Блок А</div>
+                </div>
+                <div class="item-row">
+                    <div class="detail">Деталь A1</div>
+                </div>
+                <div class="item-row">
+                    <div class="detail">Деталь A2</div>
+                </div>
+            </div>
+
+            <div class="block-wrapper">
+                <div class="item-row">
+                    <div class="block">Блок Б</div>
+                </div>
+                <div class="item-row">
+                    <div class="detail">Деталь B1</div>
+                </div>
+                <div class="item-row">
+                    <div class="detail">Деталь B2</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="right-panel" id="operationPanel">
+
+
+    </div>
+</main>
+
+<div class="btn-container">
+    <button class="confirm-btn" id="confirmBtn">Підтвердити</button>
+</div>
+
+<div class="modal" id="assignModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>Оберіть працівника</h3>
+        <input type="text" id="searchInput" placeholder="Пошук працівника..." oninput="filterEmployees()">
+        <div id="employeeList" class="employee-list">
+            <!-- Список працівників буде тут -->
+        </div>
+        <button class="confirm-btn" onclick="confirmAssignment()">Підтвердити</button>
+    </div>
+</div>
+
+
+<script>
+    const operationPanel = document.getElementById("operationPanel");
+
+    // Демонстраційні операції
+    const operationsDB = {
+        "Виріб 1": ["Операція 1.1", "Операція 1.2"],
+        "Блок А": ["Операція A1", "Операція A2"],
+        "Блок Б": ["Операція B1", "Операція B2"],
+        "Деталь A1": ["Обрізка", "Шліфування"],
+        "Деталь A2": ["Свердління", "Полірування"],
+        "Деталь B1": ["Зварювання", "Фарбування"],
+        "Деталь B2": ["Маркування", "Контроль якості"]
+    };
+
+    function renderOperations(title, operations) {
+        operationPanel.innerHTML = `
+        <div>
+            <h3 class="product-title">${title}</h3>
+            <div class="operation-list">
+                ${operations.map(op => `
+                    <div class="tool-line">
+                        <div class="tool-info">
+                            <p>${op}</p>
+                        </div>
+                        <button class="assign-btn" onclick="openModal('${op}')">Призначити</button>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+    }
+
+
+    // Додаємо обробку кліків до кожного елементу: виріб, блок, деталь
+    document.querySelectorAll('.product, .block, .detail').forEach(item => {
+        item.addEventListener('click', () => {
+            const name = item.textContent.trim();
+            const operations = operationsDB[name] || ["Немає операцій"];
+            renderOperations(name, operations);
+        });
+    });
+
+
+    const modal = document.getElementById("assignModal");
+    const employeeListEl = document.getElementById("employeeList");
+    let selectedOperation = "";
+    let selectedEmployee = "";
+
+    const employees = [
+        "Іван Іванов",
+        "Олена Петрівна",
+        "Андрій Смирнов",
+        "Тетяна Коваленко",
+        "Дмитро Лисенко"
+    ];
+
+    function openModal(operationName) {
+        selectedOperation = operationName;
+        renderEmployees(employees);
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+        selectedEmployee = "";
+    }
+
+    function renderEmployees(list) {
+        employeeListEl.innerHTML = list.map(name => `
+            <div class="employee-item" onclick="selectEmployee(this)">${name}</div>
+        `).join('');
+    }
+
+    function selectEmployee(el) {
+        // Виділення вибраного
+        document.querySelectorAll('.employee-item').forEach(item => item.style.backgroundColor = '');
+        el.style.backgroundColor = '#e0eaff';
+        selectedEmployee = el.textContent;
+    }
+
+    function confirmAssignment() {
+        if (!selectedEmployee) {
+            alert("Будь ласка, оберіть працівника.");
+            return;
+        }
+
+        // Знаходимо всі кнопки з цією операцією
+        const buttons = document.querySelectorAll('.assign-btn');
+        buttons.forEach(btn => {
+            if (btn.textContent === "Призначити" && btn.getAttribute("onclick")?.includes(selectedOperation)) {
+                btn.textContent = "Призначено";
+                btn.style.backgroundColor = "gray";
+                btn.disabled = true;
+            }
+        });
+
+        alert(`Операцію "${selectedOperation}" призначено працівнику "${selectedEmployee}".`);
+        closeModal();
+    }
+
+    function filterEmployees() {
+        const query = document.getElementById("searchInput").value.toLowerCase();
+        const filtered = employees.filter(name => name.toLowerCase().includes(query));
+        renderEmployees(filtered);
+    }
+
+    // Закриття модалки при кліку поза нею
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+
+</script>
+
+
+
+
+</body>
+</html>
