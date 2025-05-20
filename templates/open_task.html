@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>ALARM</title>
+    <link rel="stylesheet" href="../static/styles/open_task_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a href="main_for_user.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="main_for_user.html" class="tab-link">На головну</a>
+    </div>
+    <div class="account-info">
+        <p>Гуменюк Владислав</p>
+        <img src="../static/icons/account.png" alt="Користувач">
+    </div>
+</header>
+<div class="container">
+    <div class="content">
+        <p class="info-text">Завдання 1</p>
+        <p class="info-text">Локація:</p>
+        <p class="info-text">Інструменти:</p>
+        <p class="info-text">Матеріали:</p>
+        <p class="info-text">Залежні деталі:</p>
+        <div class="buttons-container">
+            <div class="buttons-block">
+                <button class="custom-button" onclick="toggleInstruction('pdf')">ТЕКСТОВА ІНСТРУКЦІЯ</button>
+                <button class="custom-button" onclick="toggleInstruction('video')">ВІДЕО–ІНСТРУКЦІЯ</button>
+                <button class="custom-button" onclick="toggleInstruction('images')">ПРИКЛАДИ</button>
+            </div>
+
+            <div id="instruction-display" style="margin-top: 40px; width: 100%; display: none;">
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="fixed-button-container">
+    <button id="start-btn" class="action-button" onclick="startTask()">ПОЧАТИ</button>
+</div>
+
+
+<script>
+    let currentVisible = null;
+
+    function toggleInstruction(type) {
+        const container = document.getElementById("instruction-display");
+        const basePath = "../static/testfiles/";
+        let content = "";
+
+        if (currentVisible === type) {
+            container.style.display = "none";
+            container.innerHTML = "";
+            currentVisible = null;
+            return;
+        }
+
+        if (type === 'pdf') {
+            content = `<iframe src="${basePath}test.pdf" width="100%" height="600px" style="border: 1px solid #ccc;"></iframe>`;
+        } else if (type === 'video') {
+            content = `
+                <video width="100%" height="auto" controls>
+                    <source src="${basePath}test.mp4" type="video/mp4">
+                    Ваш браузер не підтримує відео.
+                </video>
+            `;
+        } else if (type === 'images') {
+            content = `<img src="${basePath}#" alt="Приклад" style="max-width: 100%; height: auto; border: 1px solid #ccc;">`;
+        }
+
+        container.innerHTML = content;
+        container.style.display = "block";
+        currentVisible = type;
+    }
+
+    function startTask() {
+        const container = document.querySelector('.fixed-button-container');
+        container.innerHTML = `
+            <button class="action-button">ЗАВЕРШИТИ</button>
+            <button class="alarm-button" onclick="window.location.href='alarm.html'">ALARM!</button>
+        `;
+    }
+</script>
+
+
+
+
+
+
+
+</body>
+</html>
