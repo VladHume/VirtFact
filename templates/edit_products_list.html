@@ -10,8 +10,8 @@
 
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
         <p>Адміністратор</p>
@@ -23,7 +23,7 @@
     <input type="text" placeholder="Пошук виробу..." class="search-input" id="search-input">
 
     <div class="btn-container">
-        <a href="#" class="add-product-btn">
+        <a href="{{ url_for('add_product') }}" class="add-product-btn">
             <img src="../static/icons/plus.png" alt="" class="add-product-icon">
             <span class="add-product-text">Додати&nbsp;виріб </span>
         </a>
@@ -32,29 +32,21 @@
 
 
 <div class="products-list" id="products-list">
-    <div class="product-line">
+    {% for p in products %}
+    <div class="product-line" data-product-id="{{ p.id }}">
         <div class="product-info">
-            <p>Виріб 1</p>
+            <p>{{ p.name }}</p>
         </div>
         <div class="operations">
-            <a href="#" class="edit-product-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
+            <a href="{{ url_for('add_product', product_id=p.id) }}" class="edit-product-btn">
+                <img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon">
+            </a>
             <button class="delete-product-btn">
                 <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
             </button>
         </div>
     </div>
-
-    <div class="product-line">
-        <div class="product-info">
-            <p>Виріб 2</p>
-        </div>
-        <div class="operations">
-            <a href="#" class="edit-product-btn"><img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon"></a>
-            <button class="delete-product-btn">
-                <img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">
-            </button>
-        </div>
-    </div>
+{% endfor %}
 </div>
 
 
@@ -83,6 +75,29 @@
             }
         });
     });
+
+    document.querySelectorAll('.delete-product-btn').forEach(btn => {
+    btn.addEventListener('click', function (event) {
+        const productId = btn.closest('.product-line').getAttribute('data-product-id');
+
+        if (confirm("Видалити виріб із системи?")) {
+            fetch(`/delete_product/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    btn.closest('.product-line').remove();
+                } else {
+                    alert("Помилка при видаленні виробу.");
+                }
+            });
+        }
+    });
+});
+
 
 </script>
 

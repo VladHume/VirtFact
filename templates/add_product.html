@@ -6,11 +6,10 @@
   <link rel="stylesheet" href="../static/styles/add_product_styles.css">
 </head>
 <body>
-
 <header>
   <div class="nav-container">
-    <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-    <a href="main_admin.html" class="tab-link">На головну</a>
+    <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
   </div>
   <div class="account-info">
     <p>Адміністратор</p>
@@ -20,182 +19,153 @@
 
 <main class="main-container">
   <div class="left-panel">
-    <div class="add-form" id="productForm">
-      <input type="text" id="productName" placeholder="Введіть назву виробу">
-      <button class="add-btn" id="addProductBtn"><img src="../static/icons/plus.png">Додати виріб</button>
+    <form id="productForm" method="POST" action="/add_product">
+      <input type="text" name="productName" id="productName" placeholder="Введіть назву виробу">
+      <button type="submit" class="add-btn"><img src="../static/icons/plus.png">Додати виріб</button>
+    </form>
+
+    <div id="hierarchyContainer">
+      {% if product %}
+        <div class="product-wrapper">
+          <div class="item-row">
+            <div class="product" onclick="loadOperations({{ product.id }}, 'product')">{{ product.name }}</div>
+            <a href="javascript:void(0);" class="add-btn side-btn" onclick="addBlock({{ product.id }})">
+              <img src="../static/icons/plus.png">Додати блок
+            </a>
+          </div>
+
+          {% for block in product.blocks %}
+            <div class="block-wrapper">
+              <div class="item-row">
+                <div class="block" onclick="loadOperations({{ block.id }}, 'block')">{{ block.name }}</div>
+                <a href="javascript:void(0);" class="add-btn side-btn" onclick="addDetail({{ block.id }})">
+                  <img src="../static/icons/plus.png">Додати деталь
+                </a>
+              </div>
+
+              {% for detail in block.details %}
+                <div class="item-row">
+                  <div class="detail" onclick="loadOperations({{ detail.id }}, 'detail')">{{ detail.name }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
     </div>
-    <div id="hierarchyContainer"></div>
   </div>
 
-  <div class="right-panel" id="operationPanel">
-    <h3 id="operationTitle">Операції</h3>
-    <div id="operationList" class="operations-list">
-
-    </div>
-    <div class="operation-footer">
-      <button class="add-btn" onclick="window.location.href='add_operation.html'">
-        <img src="../static/icons/plus.png">Додати операцію
-      </button>
-    </div>
+  <div class="right-panel">
+    <!-- Динамічно заповнюється через JavaScript -->
   </div>
 </main>
-<div class="btn-container">
-  <button class="confirm-btn" id="confirmBtn">Підтвердити</button>
-</div>
-
 
 <script>
-  let productAdded = false;
-  const hierarchyContainer = document.getElementById("hierarchyContainer");
-  const operationPanel = document.getElementById("operationPanel");
-  const operationTitle = document.getElementById("operationTitle");
-  const operationList = document.getElementById("operationList");
-  const productForm = document.getElementById("productForm");
+const typeMap = {
+  product: 'Продукт',
+  block: 'Блок',
+  detail: 'Деталь'
+};
 
-  const addProductBtn = document.getElementById("addProductBtn");
-  addProductBtn.addEventListener("click", () => {
-    const input = document.getElementById("productName");
-    const name = input.value.trim();
-    if (!name || productAdded) {
-      input.classList.add("invalid");
-      return;
-    }
-    input.classList.remove("invalid");
-
-    const productWrapper = document.createElement("div");
-    productWrapper.className = "product-wrapper";
-
-    const productRow = document.createElement("div");
-    productRow.className = "item-row";
-
-    const productDiv = createElement("div", "product", name);
-    productDiv.addEventListener("click", () => showOperations(name, "Виріб"));
-
-    const addBlockBtn = createSideButton("Додати блок", () => {
-      const blockName = prompt("Введіть назву блоку:");
-      if (!blockName) return;
-
-      const blockWrapper = document.createElement("div");
-      blockWrapper.className = "block-wrapper";
-
-      const blockRow = document.createElement("div");
-      blockRow.className = "item-row";
-
-      const blockDiv = createElement("div", "block", blockName);
-      blockDiv.addEventListener("click", () => showOperations(blockName, "Блок"));
-
-      const addDetailBtn = createSideButton("Додати деталь", () => {
-        const detailName = prompt("Введіть назву деталі:");
-        if (!detailName) return;
-
-        const detailRow = document.createElement("div");
-        detailRow.className = "item-row";
-
-        const detailDiv = createElement("div", "detail", detailName);
-        detailDiv.addEventListener("click", () => showOperations(detailName, "Деталь"));
-
-        detailRow.appendChild(detailDiv);
-        blockWrapper.appendChild(detailRow);
-      });
-
-      blockRow.appendChild(blockDiv);
-      blockRow.appendChild(addDetailBtn);
-      blockWrapper.appendChild(blockRow);
-      productWrapper.appendChild(blockWrapper);
+function addBlock(productId) {
+  const blockName = prompt("Введіть назву блоку:");
+  if (blockName) {
+    fetch(`/add_block/${productId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ block_name: blockName })
+    }).then(res => {
+      if (res.ok) location.reload();
+      else alert("Не вдалося додати блок.");
     });
-
-    productRow.appendChild(productDiv);
-    productRow.appendChild(addBlockBtn);
-    productWrapper.appendChild(productRow);
-    hierarchyContainer.appendChild(productWrapper);
-
-    productForm.style.display = "none";
-    productAdded = true;
-  });
-
-  function createElement(tag, className, text) {
-    const el = document.createElement(tag);
-    el.className = className;
-    el.textContent = text;
-    return el;
   }
+}
 
-  function createSideButton(label, callback) {
-    const btn = document.createElement("button");
-    btn.className = "add-btn side-btn";
-    btn.innerHTML = `<img src="../static/icons/plus.png">${label}`;
-    btn.onclick = callback;
-    return btn;
+function addDetail(blockId) {
+  const detailName = prompt("Введіть назву деталі:");
+  if (detailName) {
+    fetch(`/add_detail/${blockId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ detail_name: detailName })
+    }).then(res => {
+      if (res.ok) location.reload();
+      else alert("Не вдалося додати деталь.");
+    });
   }
+}
 
-  function showOperations(name, type) {
-    operationPanel.style.display = "flex";
-    operationTitle.textContent = `${type}: ${name}`;
-    operationList.innerHTML = '<p class="operation-placeholder">Операцій ще не додано</p>';
+function loadOperations(componentId, componentType) {
+  fetch(`/get_operations/${componentType}/${componentId}`)
+    .then(response => response.json())
+    .then(data => {
+      const panel = document.querySelector('.right-panel');
+      const translatedType = typeMap[componentType] || componentType;
+      panel.innerHTML = `
+          <h3>${translatedType}: ${data.component_name}</h3>
+          <div class="operations-list">
+            ${data.operations.map(op => `
+              <div class="product-line">
+                <div class="product-info">
+                  <p>Назва: ${op.name}</p>
+                </div>
+                <div class="operations">
+                  <a href="/edit_operation/${op.id}" class="icon-btn">
+                    <img src="../static/icons/edit.png" alt="Редагувати">
+                  </a>
+                  <button class="icon-btn delete-operation-btn" data-operation-id="${op.id}" data-component-type="${componentType}" data-component-id="${componentId}" title="Видалити">
+                      <img src="../static/icons/delete.png" alt="Видалити">
+                    </button>
 
-    const storedOp = sessionStorage.getItem("newOperation");
-    if (storedOp) {
-      const op = JSON.parse(storedOp);
-      const opEl = document.createElement("div");
-      opEl.textContent = `Операція: ${op.location} (інструментів: ${op.tools.length}, матеріалів: ${op.materials.length})`;
-      operationList.appendChild(opEl);
-      sessionStorage.removeItem("newOperation");
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="operation-footer">
+            <a href="/add_operation/${componentId}?type=${componentType}" class="add-btn">
+              <img src="../static/icons/plus.png">Додати операцію
+            </a>
+          </div>
+        `;
+    });
+}
+document.addEventListener('click', function(event) {
+  if (event.target.closest('.delete-operation-btn')) {
+    const btn = event.target.closest('.delete-operation-btn');
+    const operationId = btn.getAttribute('data-operation-id');
+    const componentType = btn.getAttribute('data-component-type');
+    const componentId = btn.getAttribute('data-component-id');
+
+    if (confirm('Ви впевнені, що хочете видалити операцію?')) {
+      fetch(`/delete_operation/${operationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          component_type: componentType,
+          component_id: componentId
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Видаляємо рядок з операцією з DOM
+          const operationDiv = btn.closest('.product-line');
+          if (operationDiv) operationDiv.remove();
+          alert('Операцію успішно видалено');
+        } else {
+          alert('Помилка при видаленні операції');
+        }
+      })
+      .catch(() => alert('Сталася помилка при з\'єднанні з сервером'));
     }
-
   }
+});
 
-  function renderAddedOperations() {
-    const operationsList = document.getElementById('operationsList');
-    operationsList.innerHTML = '';
-
-    const operation = JSON.parse(sessionStorage.getItem('newOperation'));
-    if (!operation) return;
-
-    const div = document.createElement('div');
-    div.className = 'product-line';
-
-    const info = document.createElement('div');
-    info.className = 'product-info';
-
-    const productText = document.createElement('p');
-    productText.textContent = `Локація: ${operation.product}`;
-
-    const toolsText = document.createElement('p');
-    toolsText.textContent = `Інструменти: ${operation.tools.join(', ') || 'немає'}`;
-
-    const materialsText = document.createElement('p');
-    materialsText.textContent = `Матеріали: ${operation.materials.join(', ') || 'немає'}`;
-
-    info.append(productText, toolsText, materialsText);
-
-    const ops = document.createElement('div');
-    ops.className = 'operations';
-
-    const editBtn = document.createElement('a');
-    editBtn.href = '#'; // або посилання на сторінку редагування
-    editBtn.className = 'edit-product-btn';
-    editBtn.innerHTML = '<img src="../static/icons/edit.png" alt="Редагувати" class="tab-link-icon">';
-
-    const delBtn = document.createElement('button');
-    delBtn.className = 'delete-producttion-btn';
-    delBtn.innerHTML = '<img src="../static/icons/delete.png" alt="Видалити" class="tab-link-icon">';
-    delBtn.onclick = () => {
-      sessionStorage.removeItem('newOperation');
-      renderAddedOperations();
-    };
-
-    ops.append(editBtn, delBtn);
-    div.append(info, ops);
-    operationsList.appendChild(div);
-  }
-
-  window.onload = function () {
-    renderAddedOperations();
-  };
 
 </script>
-
-
 
 </body>
 </html>

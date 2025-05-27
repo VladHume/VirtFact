@@ -2,15 +2,15 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Додати операцію</title>
+    <title>{% if edit_mode %}Редагувати операцію{% else %}Додати операцію{% endif %}</title>
     <link rel="stylesheet" href="../static/styles/add_operation_styles.css">
 </head>
 <body>
 
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
         <img src="../static/icons/account.png" alt="Адміністратор">
@@ -19,35 +19,71 @@
 
 <main class="operation-container">
     <div class="form-section">
-        <h3>Блок 1: Додати операцію</h3>
+        <h3>{{ component_name }}: {% if edit_mode %}Редагувати операцію{% else %}Додати операцію{% endif %}</h3>
+
         <div class="select-block">
             <label for="operationName">Введіть назву операції:</label>
-            <input type="text" id="operationName" placeholder="Назва операції">
+            <input type="text" id="operationName" name="name" placeholder="Назва операції"
+                   value="{{ operation.name if edit_mode else '' }}">
         </div>
 
-
         <label for="locationSelect">Оберіть локацію:</label>
-        <select id="locationSelect">
-            <!-- Заповниться через JavaScript -->
+        <select id="locationSelect" name="location">
+            {% for location in locations %}
+                {% if location.id == location_id %}
+                    <option value="{{ location.id }}" selected>{{ location.name }}</option>
+                {% endif %}
+            {% endfor %}
+            {% for location in locations %}
+                {% if location.id != location_id %}
+                    <option value="{{ location.id }}">{{ location.name }}</option>
+                {% endif %}
+            {% endfor %}
         </select>
 
         <div class="select-block">
             <label>Вкажіть інструменти:</label>
             <input type="text" placeholder="Пошук інструментів..." oninput="filterCheckboxes('toolsCheckboxes', this.value)">
-            <div id="toolsCheckboxes" class="checkbox-group"></div>
+            <div id="toolsCheckboxes" class="checkbox-group">
+                {% for tool in tools %}
+                    <label>
+                        <input type="checkbox" name="tools[]" value="{{ tool.id }}"
+                        {% if edit_mode and tool.id in selected_tools %}checked{% endif %}>
+                        {{ tool.name }}
+                    </label>
+                {% endfor %}
+            </div>
         </div>
 
         <div class="select-block">
             <label>Вкажіть матеріали:</label>
             <input type="text" placeholder="Пошук матеріалів..." oninput="filterCheckboxes('materialsCheckboxes', this.value)">
-            <div id="materialsCheckboxes" class="checkbox-group"></div>
+            <div id="materialsCheckboxes" class="checkbox-group">
+                {% for material in materials %}
+                    <label>
+                        <input type="checkbox" name="materials[]" value="{{ material.id }}"
+                        {% if edit_mode and material.id in selected_materials %}checked{% endif %}>
+                        {{ material.name }}
+                    </label>
+                {% endfor %}
+            </div>
         </div>
 
+        {% if component_type == 'block' or component_type == 'detail' %}
         <div class="select-block">
-            <label>Вкажіть залежні блоки:</label>
-            <input type="text" placeholder="Пошук блоків..." oninput="filterCheckboxes('dependencyCheckboxes', this.value)">
-            <div id="dependencyCheckboxes" class="checkbox-group"></div>
+            <label>Вкажіть залежні {{ 'блоки' if component_type == 'block' else 'деталі' }}:</label>
+            <input type="text" placeholder="Пошук..." oninput="filterCheckboxes('dependencyCheckboxes', this.value)">
+            <div id="dependencyCheckboxes" class="checkbox-group">
+                {% for item in dependencies %}
+                    <label>
+                        <input type="checkbox" name="dependencies[]" value="{{ component_type }}:{{ item.id }}"
+                        {% if edit_mode and component_type ~ ':' ~ item.id|string in selected_dependencies %}checked{% endif %}>
+                        {{ item.name }}
+                    </label>
+                {% endfor %}
+            </div>
         </div>
+        {% endif %}
 
     </div>
 
@@ -55,133 +91,191 @@
         <h4>Інструкції:</h4>
 
         <div class="upload-group">
-            <button onclick="uploadFile('text/pdf', 'pdfList')" class="upload-btn">📎 Прикріпити текстову інструкцію</button>
-            <ul id="pdfList" class="file-list"></ul>
+            <button type="button" onclick="uploadFile('text/pdf', 'pdfList')" class="upload-btn">📎 Прикріпити текстову інструкцію</button>
+            <ul id="pdfList" class="file-list">
+                {% if edit_mode %}
+                    {% for t in text_files %}
+                        <li>
+                            {{ t }}
+                            <span class="remove-btn" onclick="removeExistingFile('text', '{{ t }}', this)">❌</span>
+                        </li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
         </div>
 
         <div class="upload-group">
-            <button onclick="uploadFile('video/mp4', 'videoList')" class="upload-btn">📎 Прикріпити відео-інструкцію</button>
-            <ul id="videoList" class="file-list"></ul>
+            <button type="button" onclick="uploadFile('video/mp4', 'videoList')" class="upload-btn">📎 Прикріпити відео-інструкцію</button>
+            <ul id="videoList" class="file-list">
+                {% if edit_mode %}
+                    {% for v in video_files %}
+                        <li>
+                            {{ v }}
+                            <span class="remove-btn" onclick="removeExistingFile('video', '{{ v }}', this)">❌</span>
+                        </li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
         </div>
 
         <div class="upload-group">
-            <button onclick="uploadFile('image/png', 'imageList', true)" class="upload-btn">📎 Надати приклади готового блоку</button>
-            <ul id="imageList" class="file-list"></ul>
+            <button type="button" onclick="uploadFile('image/png', 'imageList', true)" class="upload-btn">📎 Надати приклади готового блоку</button>
+            <ul id="imageList" class="file-list">
+                {% if edit_mode %}
+                    {% for p in photo_files %}
+                        <li>
+                            {{ p }}
+                            <span class="remove-btn" onclick="removeExistingFile('photo', '{{ p }}', this)">❌</span>
+                        </li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
         </div>
 
         <input type="file" id="fileInput" style="display:none" multiple>
     </div>
-
 </main>
 
-
 <div class="btn-container">
-    <button class="confirm-btn" onclick="submitOperation()">ПІДТВЕРДИТИ</button>
+    {% if edit_mode %}
+        <button class="confirm-btn" onclick="updateOperation({{ operation.id }})">ОНОВИТИ</button>
+    {% else %}
+        <button class="confirm-btn" onclick="submitOperation()">ПІДТВЕРДИТИ</button>
+    {% endif %}
 </div>
 
 <script>
-    const locations = ["Цех 1", "Цех 2", "Цех 3"];
-    const tools = ["Молоток", "Дриль", "Викрутка"];
-    const materials = ["Дерево", "Метал", "Пластик"];
-    const dependencies = ["Блок А", "Блок Б", "Блок В"];
-
-    window.onload = () => {
-        populateSelect("locationSelect", locations);
-        populateCheckboxes("toolsCheckboxes", tools);
-        populateCheckboxes("materialsCheckboxes", materials);
-        populateCheckboxes("dependencyCheckboxes", dependencies); // Додано!
+    const fileStorage = {
+        pdf: [],
+        video: [],
+        image: []
     };
 
+    const deletedFiles = {
+        text: [],
+        video: [],
+        photo: []
+    };
 
-
-    function populateSelect(id, items) {
-        const select = document.getElementById(id);
-        items.forEach(item => {
-            const option = document.createElement("option");
-            option.value = item;
-            option.textContent = item;
-            select.appendChild(option);
-        });
-    }
-
-    function populateCheckboxes(id, items) {
-        const container = document.getElementById(id);
-        container.innerHTML = ""; // очистити, якщо треба перезаповнити
-        items.forEach(item => {
-            const label = document.createElement("label");
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.value = item;
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(" " + item));
-            container.appendChild(label);
-        });
-    }
-
-    function filterCheckboxes(containerId, query) {
-        const container = document.getElementById(containerId);
-        const checkboxes = container.querySelectorAll("label");
-        const lowerQuery = query.toLowerCase();
-
-        checkboxes.forEach(label => {
-            const text = label.textContent.toLowerCase();
-            label.style.display = text.includes(lowerQuery) ? "block" : "none";
-        });
-    }
-
-
-
-
-    function uploadFile(acceptType, listId, multiple = false) {
+    function uploadFile(type, listId, allowMultiple = false) {
         const input = document.getElementById("fileInput");
-        input.accept = acceptType;
-        input.multiple = multiple;
-
+        input.accept = type;
+        input.multiple = allowMultiple;
         input.onchange = () => {
             const list = document.getElementById(listId);
-            [...input.files].forEach(file => {
-                const listItem = document.createElement("li");
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(file);
-                link.textContent = file.name;
-                link.target = "_blank";
-                listItem.appendChild(link);
-                list.appendChild(listItem);
-            });
-            input.value = ""; // очистити input, щоб можна було вибрати ті ж файли ще раз
-        };
+            Array.from(input.files).forEach(file => {
+                const li = document.createElement("li");
+                li.textContent = file.name;
 
+                const removeBtn = document.createElement("span");
+                removeBtn.textContent = "❌";
+                removeBtn.className = "remove-btn";
+                removeBtn.onclick = () => {
+                    list.removeChild(li);
+                    if (listId === "pdfList") fileStorage.pdf = fileStorage.pdf.filter(f => f !== file);
+                    else if (listId === "videoList") fileStorage.video = fileStorage.video.filter(f => f !== file);
+                    else if (listId === "imageList") fileStorage.image = fileStorage.image.filter(f => f !== file);
+                };
+                li.appendChild(removeBtn);
+                list.appendChild(li);
+
+                if (listId === "pdfList") fileStorage.pdf.push(file);
+                else if (listId === "videoList") fileStorage.video.push(file);
+                else if (listId === "imageList") fileStorage.image.push(file);
+            });
+            input.value = "";
+        };
         input.click();
     }
 
+    function removeExistingFile(type, filename, el) {
+        deletedFiles[type].push(filename);
+        el.parentElement.remove();  // Видаляє <li>
+    }
 
-    function getCheckedValues(containerId) {
-        const checkboxes = document.querySelectorAll(`#${containerId} input[type="checkbox"]`);
-        return Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    function getSelectedValues(name) {
+        return Array.from(document.querySelectorAll(`input[name="${name}[]"]:checked`)).map(input => input.value);
+    }
+
+    function gatherFormData() {
+        return {
+            name: document.querySelector('#operationName').value,
+            location: document.querySelector('#locationSelect').value,
+            tools: getSelectedValues("tools"),
+            materials: getSelectedValues("materials"),
+            dependencies: getSelectedValues("dependencies")
+        };
+    }
+
+    function buildFormData(data, isNew = true) {
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("location", data.location);
+        data.tools.forEach(id => formData.append("tools[]", id));
+        data.materials.forEach(id => formData.append("materials[]", id));
+        data.dependencies.forEach(id => formData.append("dependencies[]", id));
+
+        fileStorage.pdf.forEach(file => formData.append("texts", file));
+        fileStorage.video.forEach(file => formData.append("videos", file));
+        fileStorage.image.forEach(file => formData.append("photos", file));
+
+        formData.append("deleted_files", JSON.stringify(deletedFiles));
+
+        if (isNew) {
+            formData.append("component_id", {{ component_id }});
+            formData.append("product_type", "{{ component_type }}");
+        }
+
+        return formData;
     }
 
     function submitOperation() {
-        const location = document.getElementById("locationSelect").value;
-        const tools = getCheckedValues("toolsCheckboxes");
-        const materials = getCheckedValues("materialsCheckboxes");
-        const dependencies = getCheckedValues("dependencyCheckboxes");
-        const name = document.getElementById("operationName").value.trim();
+        const data = gatherFormData();
+        const formData = buildFormData(data, true);
 
+        fetch("{{ url_for('save_operation') }}", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === "success") {
+                alert("Операція додана успішно");
+                window.location.href = "{{ url_for('add_product', product_id=product_id) }}";
+            } else {
+                alert("Помилка при додаванні операції");
+            }
+        });
+    }
 
-        const operation = {
-            name,
-            location,
-            tools,
-            materials,
-            dependencies
-        };
+    function updateOperation(id) {
+        const data = gatherFormData();
+        const formData = buildFormData(data, false);
 
+        fetch(`/update_operation/${id}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === "success") {
+                alert("Операція оновлена успішно");
+                window.location.href = "{{ url_for('add_product', product_id=product_id) }}";
+            } else {
+                alert("Помилка при оновленні операції");
+            }
+        });
+    }
 
-        sessionStorage.setItem("newOperation", JSON.stringify(operation));
-        window.location.href = "add_product.html"; // або history.back()
+    function filterCheckboxes(groupId, query) {
+        const checkboxes = document.getElementById(groupId).querySelectorAll("label");
+        query = query.toLowerCase();
+        checkboxes.forEach(label => {
+            const text = label.textContent.toLowerCase();
+            label.style.display = text.includes(query) ? "block" : "none";
+        });
     }
 </script>
-
 
 </body>
 </html>

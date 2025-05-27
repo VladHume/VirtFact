@@ -4,3 +4,12 @@ from .employees import *
 from .materials import *
 from .locations import *
 from .tools import *
+from .products import *
+from .blocks import *
+from .details import *
+from .operations import *
+from .instructions import *
+from .tools_for_operation import *
+from .locations_for_operation import *
+from .materials_for_operation import *
+from .dependent_components import *
