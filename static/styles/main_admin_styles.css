@@ -262,6 +262,25 @@ body, html {
     border: none;
     cursor: pointer;
     text-decoration: none;
+
+}
+
+.more-info-btns {
+    gap:  12px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+button{
+    border: none;
+    text-decoration: none;
+    background-color: #0072CE;
+    cursor: pointer;
+
 }
 
 .more-info a {

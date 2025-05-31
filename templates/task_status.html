@@ -104,9 +104,13 @@
                                 ? `Виконавець: ${assigned.employee_name}<br>Статус: ${assigned.status}`
                                 : "Не призначено";
 
-                            const style = assigned
-                                ? 'background-color: #f0f0f0; padding: 5px; border-radius: 6px;'
-                                : 'background-color: #ffeaea; padding: 5px; border-radius: 6px;';
+                            const style = `
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+    color: #232323;
+`;
+
 
                             return `
                                 <div class="product-line">

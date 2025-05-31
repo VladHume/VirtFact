@@ -79,17 +79,25 @@
                   <p>{{ td.product_name }}</p>
                 </div>
               </div>
-              <div class="more-info-btn">
+
+                <div class="more-info-btns">
+                    <div class="more-info-btn">
                 <a href="{{ url_for('task_status', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
                   <span class="more-info-text">Детальніше</span>
                 </a>
+              </div>
+              <div class="more-info-btn">
                 <a href="{{ url_for('add_task', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
                   <span class="more-info-text">Редагувати</span>
                 </a>
+              </div>
+              <div class="more-info-btn">
                 <form class="more-info" action="{{ url_for('delete_admin_task', task_id=td.task_id) }}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити це завдання?')">
                   <button class="more-info-text" type="submit">Видалити</button>
                 </form>
               </div>
+                </div>
+
             </div>
           {% endfor %}
 
