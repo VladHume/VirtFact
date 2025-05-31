@@ -4,6 +4,15 @@
     box-sizing: border-box;
 }
 
+.task-status{
+    background-color: #0072CE;
+    /*/background-color: #a8a8a8; сірий/*/
+    /*!*background-color: #0ab142; зелений *!*/
+    /*/background-color: #e31212;  червоний/*/
+    border-radius: 50%;
+    height: 22px;
+    width:22px;
+}
 
 header{
     display: flex;

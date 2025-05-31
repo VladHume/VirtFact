@@ -13,23 +13,19 @@
     <h1>Віртуальна виробнича лінія</h1>
   </div>
   <div class="account-info">
-    <p>Гуменюк Владислав</p>
+    <p>{{ name }}</p>
     <img src="../static/icons/account.png" alt="Адміністратор">
   </div>
 </header>
 
 <div class="products-list" id="products-list">
-  <button class="product-line" onclick="location.href='placeholder1.html'">
+    {% for t in tasks %}
+  <button class="product-line" onclick="location.href='{{ url_for('instruction_page', task_id=t.task_id) }}'">
     <div class="product-info">
-      <p>Завдання 1</p>
+      <p>{{ t.operation_name }}</p>
     </div>
   </button>
-
-  <button class="product-line" onclick="location.href='placeholder1.html'">
-    <div class="product-info">
-      <p>Завдання 2</p>
-    </div>
-  </button>
+    {% endfor %}
 
 </div>
 

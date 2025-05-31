@@ -13,3 +13,6 @@ from .tools_for_operation import *
 from .locations_for_operation import *
 from .materials_for_operation import *
 from .dependent_components import *
+from .tasks import *
+from .admin_tasks import *
+from .alarms import *

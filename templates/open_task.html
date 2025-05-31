@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>ALARM</title>
+    <title>Інструкції до завдання</title>
     <link rel="stylesheet" href="../static/styles/open_task_styles.css">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
 </head>
@@ -10,21 +10,35 @@
 
 <header>
     <div class="nav-container">
-        <a href="main_for_user.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_for_user.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home_for_employee') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home_for_employee') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
-        <p>Гуменюк Владислав</p>
+        <p>{{emp_name}}</p>
         <img src="../static/icons/account.png" alt="Користувач">
     </div>
 </header>
+
 <div class="container">
     <div class="content">
-        <p class="info-text">Завдання 1</p>
-        <p class="info-text">Локація:</p>
-        <p class="info-text">Інструменти:</p>
-        <p class="info-text">Матеріали:</p>
-        <p class="info-text">Залежні деталі:</p>
+        <p class="info-text">{{ name }}</p>
+        <p class="info-text">Локація: {{ location.name }}</p>
+        <p class="info-text">Інструменти:
+            {% for t in tools %}
+                {{ t.name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+        <p class="info-text">Матеріали:
+            {% for m in materials %}
+                {{ m.name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+        <p class="info-text">Залежні деталі:
+            {% for dp in dependencies %}
+                {{ dp.name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+
         <div class="buttons-container">
             <div class="buttons-block">
                 <button class="custom-button" onclick="toggleInstruction('pdf')">ТЕКСТОВА ІНСТРУКЦІЯ</button>
@@ -32,27 +46,42 @@
                 <button class="custom-button" onclick="toggleInstruction('images')">ПРИКЛАДИ</button>
             </div>
 
-            <div id="instruction-display" style="margin-top: 40px; width: 100%; display: none;">
-
-            </div>
-
+            <div id="instruction-display" style="margin-top: 40px; width: 100%; display: none;"></div>
         </div>
-
     </div>
-
 </div>
 
 <div class="fixed-button-container">
-    <button id="start-btn" class="action-button" onclick="startTask()">ПОЧАТИ</button>
+    {% if status == 'Не активне' %}
+        <button id="start-btn" class="action-button" onclick="location.href='{{ url_for('start_task', task_id=task_id) }}'">ПОЧАТИ</button>
+    {% elif status == 'У роботі' %}
+        <button class="action-button" onclick="location.href='{{ url_for('finish_task', task_id=task_id) }}'">ЗАВЕРШИТИ</button>
+        <button class="alarm-button" onclick="window.location.href='{{ url_for('alarm', task_id=task_id) }}'">ALARM!</button>
+    {% endif %}
 </div>
-
 
 <script>
     let currentVisible = null;
 
+    const textFiles = {{ text_files | tojson }};
+    const videoFiles = {{ video_files | tojson }};
+    const imageFiles = {{ image_files | tojson }};
+
+    const photoPath = "{{ photo_path }}";
+    const videoPath = "{{ video_path }}";
+    const textPath = "{{ text_path }}";
+
+    function joinUrl(base, file) {
+        if (!base) return file;
+        if (base.endsWith('/')) {
+            return base + file;
+        } else {
+            return base + '/' + file;
+        }
+    }
+
     function toggleInstruction(type) {
         const container = document.getElementById("instruction-display");
-        const basePath = "../static/testfiles/";
         let content = "";
 
         if (currentVisible === type) {
@@ -63,16 +92,36 @@
         }
 
         if (type === 'pdf') {
-            content = `<iframe src="${basePath}test.pdf" width="100%" height="600px" style="border: 1px solid #ccc;"></iframe>`;
+            if (!textFiles || textFiles.length === 0) {
+                content = "<p>Немає текстових інструкцій</p>";
+            } else {
+                content = "<ul>";
+                textFiles.forEach(file => {
+                    const fullPath = joinUrl(textPath, file);
+                    content += `<li><a href="${fullPath}" target="_blank" rel="noopener noreferrer">${file}</a></li>`;
+                });
+                content += "</ul>";
+            }
         } else if (type === 'video') {
-            content = `
-                <video width="100%" height="auto" controls>
-                    <source src="${basePath}test.mp4" type="video/mp4">
-                    Ваш браузер не підтримує відео.
-                </video>
-            `;
+            if (!videoFiles || videoFiles.length === 0) {
+                content = "<p>Немає відео</p>";
+            } else {
+                content = "<ul>";
+                videoFiles.forEach(file => {
+                    const fullPath = joinUrl(videoPath, file);
+                    content += `<li><a href="#" onclick="showVideo('${fullPath}'); return false;">${file}</a></li>`;
+                });
+                content += "</ul><div id='video-container'></div>";
+            }
         } else if (type === 'images') {
-            content = `<img src="${basePath}#" alt="Приклад" style="max-width: 100%; height: auto; border: 1px solid #ccc;">`;
+            if (!imageFiles || imageFiles.length === 0) {
+                content = "<p>Немає прикладів</p>";
+            } else {
+                imageFiles.forEach(file => {
+                    const fullPath = joinUrl(photoPath, file);
+                    content += `<img src="${fullPath}" alt="Приклад" style="max-width: 100%; height: auto; margin-bottom: 10px; border: 1px solid #ccc;">`;
+                });
+            }
         }
 
         container.innerHTML = content;
@@ -80,20 +129,16 @@
         currentVisible = type;
     }
 
-    function startTask() {
-        const container = document.querySelector('.fixed-button-container');
+    function showVideo(videoUrl) {
+        const container = document.getElementById("video-container");
         container.innerHTML = `
-            <button class="action-button">ЗАВЕРШИТИ</button>
-            <button class="alarm-button" onclick="window.location.href='alarm.html'">ALARM!</button>
+            <video width="100%" height="auto" controls style="margin-top: 20px;">
+                <source src="${videoUrl}" type="video/mp4">
+                Ваш браузер не підтримує відео.
+            </video>
         `;
     }
 </script>
-
-
-
-
-
-
 
 </body>
 </html>

@@ -10,8 +10,8 @@
 
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
         <p>Адміністратор</p>
@@ -21,36 +21,30 @@
 
 <main class="main-container">
     <div class="left-panel">
+        <div id="hierarchyContainer">
+      {% if product %}
         <div class="product-wrapper">
-            <div class="item-row">
-                <div class="product">Виріб 1</div>
+          <div class="item-row">
+            <div class="product" onclick="renderOperations({{ product.id }}, 'product', {{ admin_task.id }})">{{ product.name }}</div>
+          </div>
 
-            </div>
-
+          {% for block in product.blocks %}
             <div class="block-wrapper">
-                <div class="item-row">
-                    <div class="block">Блок А</div>
-                </div>
-                <div class="item-row">
-                    <div class="detail">Деталь A1</div>
-                </div>
-                <div class="item-row">
-                    <div class="detail">Деталь A2</div>
-                </div>
-            </div>
+              <div class="item-row">
+                <div class="block" onclick="renderOperations({{ block.id }}, 'block', {{ admin_task.id }})">{{ block.name }}</div>
+              </div>
 
-            <div class="block-wrapper">
+              {% for detail in block.details %}
                 <div class="item-row">
-                    <div class="block">Блок Б</div>
+                  <div class="detail" onclick="renderOperations({{ detail.id }}, 'detail', {{ admin_task.id }})">{{ detail.name }}</div>
                 </div>
-                <div class="item-row">
-                    <div class="detail">Деталь B1</div>
-                </div>
-                <div class="item-row">
-                    <div class="detail">Деталь B2</div>
-                </div>
+              {% endfor %}
             </div>
+          {% endfor %}
         </div>
+      {% endif %}
+    </div>
+  </div>
 
     </div>
 
@@ -61,7 +55,7 @@
 </main>
 
 <div class="btn-container">
-    <button class="confirm-btn" id="confirmBtn">Підтвердити</button>
+    <button class="confirm-btn" id="confirmBtn" onclick="location.href='{{ url_for('home') }}'">Готово</button>
 </div>
 
 <div class="modal" id="assignModal">
@@ -75,86 +69,106 @@
         <button class="confirm-btn" onclick="confirmAssignment()">Підтвердити</button>
     </div>
 </div>
-
-
 <script>
     const operationPanel = document.getElementById("operationPanel");
 
-    // Демонстраційні операції
-    const operationsDB = {
-        "Виріб 1": ["Операція 1.1", "Операція 1.2"],
-        "Блок А": ["Операція A1", "Операція A2"],
-        "Блок Б": ["Операція B1", "Операція B2"],
-        "Деталь A1": ["Обрізка", "Шліфування"],
-        "Деталь A2": ["Свердління", "Полірування"],
-        "Деталь B1": ["Зварювання", "Фарбування"],
-        "Деталь B2": ["Маркування", "Контроль якості"]
+    const typeMap = {
+        product: 'Продукт',
+        block: 'Блок',
+        detail: 'Деталь'
     };
 
-    function renderOperations(title, operations) {
-        operationPanel.innerHTML = `
-        <div>
-            <h3 class="product-title">${title}</h3>
-            <div class="operation-list">
-                ${operations.map(op => `
-                    <div class="tool-line">
-                        <div class="tool-info">
-                            <p>${op}</p>
-                        </div>
-                        <button class="assign-btn" onclick="openModal('${op}')">Призначити</button>
-                    </div>
-                `).join("")}
-            </div>
-        </div>
-    `;
-    }
+    let selectedComponent = {
+        id: null,
+        type: null
+    };
 
-
-    // Додаємо обробку кліків до кожного елементу: виріб, блок, деталь
-    document.querySelectorAll('.product, .block, .detail').forEach(item => {
-        item.addEventListener('click', () => {
-            const name = item.textContent.trim();
-            const operations = operationsDB[name] || ["Немає операцій"];
-            renderOperations(name, operations);
-        });
-    });
-
+    let selectedOperation = null;
+    let selectedEmployee = null;
+    let adminTask = {{ admin_task.id if admin_task else 'null' }};
 
     const modal = document.getElementById("assignModal");
     const employeeListEl = document.getElementById("employeeList");
-    let selectedOperation = "";
-    let selectedEmployee = "";
+    const employees = {{ employees | tojson }};
+    const assignedTasksList = {{ task_map | tojson }};
 
-    const employees = [
-        "Іван Іванов",
-        "Олена Петрівна",
-        "Андрій Смирнов",
-        "Тетяна Коваленко",
-        "Дмитро Лисенко"
-    ];
+    // Створюємо мапу для швидкого пошуку завдань за ключем [operation_id, component_type, component_id]
+    const assignedTasks = {};
+    assignedTasksList.forEach(t => {
+        const key = JSON.stringify([t.operation_id, t.component_type, t.product_id]);
+        assignedTasks[key] = {
+            employee_name: getEmployeeNameById(t.responsible_id) || 'Невідомий'
+        };
+    });
 
-    function openModal(operationName) {
-        selectedOperation = operationName;
+    // Функція для пошуку імені працівника по id
+    function getEmployeeNameById(id) {
+        const emp = employees.find(e => e.id === id);
+        return emp ? emp.name : null;
+    }
+
+    function renderOperations(componentId, componentType, aTaskId) {
+        selectedComponent.id = componentId;
+        selectedComponent.type = componentType;
+        adminTask = aTaskId;
+
+        fetch(`/get_operations/${componentType}/${componentId}`)
+            .then(response => response.json())
+            .then(data => {
+                const panel = document.querySelector('.right-panel');
+                const translatedType = typeMap[componentType] || componentType;
+
+                panel.innerHTML = `
+                    <h3>${translatedType}: ${data.component_name}</h3>
+                    <div class="operations-list">
+                        ${data.operations.map(op => {
+                            const key = JSON.stringify([op.id, componentType, componentId]);
+                            const assigned = assignedTasks[key];
+                            const label = assigned ? `Призначено: ${assigned.employee_name}` : "Призначити";
+                            const style = assigned ? 'background-color: #cccccc;' : '';
+                            return `
+                                <div class="product-line">
+                                    <div class="product-info">
+                                        <p>Назва: ${op.name}</p>
+                                    </div>
+                                    <div class="operations">
+                                        <button class="assign-btn" onclick="openModal(${op.id})" style="${style}">${label}</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            });
+    }
+
+    function openModal(operationId) {
+        selectedOperation = operationId;
+        selectedEmployee = null;
         renderEmployees(employees);
         modal.style.display = "block";
     }
 
     function closeModal() {
         modal.style.display = "none";
-        selectedEmployee = "";
+        selectedEmployee = null;
     }
 
     function renderEmployees(list) {
-        employeeListEl.innerHTML = list.map(name => `
-            <div class="employee-item" onclick="selectEmployee(this)">${name}</div>
+        employeeListEl.innerHTML = list.map(emp => `
+            <div class="employee-item" data-id="${emp.id}" onclick="selectEmployee(this)">
+                ${emp.name}
+            </div>
         `).join('');
     }
 
     function selectEmployee(el) {
-        // Виділення вибраного
         document.querySelectorAll('.employee-item').forEach(item => item.style.backgroundColor = '');
         el.style.backgroundColor = '#e0eaff';
-        selectedEmployee = el.textContent;
+        selectedEmployee = {
+            id: el.dataset.id,
+            name: el.textContent
+        };
     }
 
     function confirmAssignment() {
@@ -163,37 +177,67 @@
             return;
         }
 
-        // Знаходимо всі кнопки з цією операцією
-        const buttons = document.querySelectorAll('.assign-btn');
-        buttons.forEach(btn => {
-            if (btn.textContent === "Призначити" && btn.getAttribute("onclick")?.includes(selectedOperation)) {
-                btn.textContent = "Призначено";
-                btn.style.backgroundColor = "gray";
-                btn.disabled = true;
+        if (!selectedOperation || !selectedComponent.id || !selectedComponent.type) {
+            alert("Помилка: не обрано компонент або операцію.");
+            return;
+        }
+
+        fetch('/create_task', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                operation_id: selectedOperation,
+                employee_id: selectedEmployee.id,
+                component_id: selectedComponent.id,
+                component_type: selectedComponent.type,
+                admin_task: adminTask
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                const key = JSON.stringify([selectedOperation, selectedComponent.type, selectedComponent.id]);
+                assignedTasks[key] = { employee_name: selectedEmployee.name };
+
+                // Оновити текст і стиль кнопки
+                const buttons = document.querySelectorAll('.assign-btn');
+                buttons.forEach(btn => {
+                    // Перевіряємо по operationId у onclick
+                    if (btn.getAttribute("onclick")?.includes(selectedOperation)) {
+                        btn.textContent = `Призначено: ${selectedEmployee.name}`;
+                        btn.style.backgroundColor = "#cccccc";
+                        // Кнопку не блокуємо (за бажанням)
+                    }
+                });
+
+                alert(`Операцію призначено працівнику "${selectedEmployee.name}".`);
+                closeModal();
+            } else {
+                alert("Помилка: " + (data.error || "Невідома помилка"));
             }
         });
-
-        alert(`Операцію "${selectedOperation}" призначено працівнику "${selectedEmployee}".`);
-        closeModal();
     }
 
     function filterEmployees() {
         const query = document.getElementById("searchInput").value.toLowerCase();
-        const filtered = employees.filter(name => name.toLowerCase().includes(query));
+        const filtered = employees.filter(emp => emp.name.toLowerCase().includes(query));
         renderEmployees(filtered);
     }
 
-    // Закриття модалки при кліку поза нею
     window.onclick = function(event) {
         if (event.target === modal) {
             closeModal();
         }
     }
 
+    window.onload = () => {
+        {% if product %}
+            renderOperations({{ product.id }}, 'product', {{ admin_task.id }});
+        {% endif %}
+    };
 </script>
-
-
-
 
 </body>
 </html>

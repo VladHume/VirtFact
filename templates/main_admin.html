@@ -69,25 +69,29 @@
         <p>Активні завдання</p>
       </div>
       <div class="tasks-list">
-        <div class="task-line">
-          <div class="task-left">
-            <div class="progress-circle">
-              <svg viewBox="0 0 100 100">
-                <circle class="circle-bg" cx="50" cy="50" r="45" />
-                <circle class="circle-progress" cx="50" cy="50" r="45" stroke-dasharray="282.6" stroke-dashoffset="282.6" />
-              </svg>
-              <div class="progress-text" id="progress-text">0%</div>
+          {% for td in task_data %}
+            <div class="task-line">
+              <div class="task-left">
+                  <div class="task-status">
+
+                    </div>
+                <div class="task-info">
+                  <p>{{ td.product_name }}</p>
+                </div>
+              </div>
+              <div class="more-info-btn">
+                <a href="{{ url_for('task_status', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Детальніше</span>
+                </a>
+                <a href="{{ url_for('add_task', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Редагувати</span>
+                </a>
+                <form class="more-info" action="{{ url_for('delete_admin_task', task_id=td.task_id) }}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити це завдання?')">
+                  <button class="more-info-text" type="submit">Видалити</button>
+                </form>
+              </div>
             </div>
-            <div class="task-info">
-              <p>Завдання №1</p>
-            </div>
-          </div>
-          <div class="more-info-btn">
-            <a href="#" class="more-info">
-              <span class="more-info-text">Детальніше</span>
-            </a>
-          </div>
-        </div>
+          {% endfor %}
 
 
 
@@ -96,7 +100,7 @@
       </div>
 
       <div class="btn-container">
-        <a href="#" class="add-task-btn">
+        <a href="{{ url_for('task_product_list') }}" class="add-task-btn">
           <span class="add-task-text">Додати</span>
         </a>
       </div>
@@ -106,28 +110,5 @@
   </main>
 </div>
 
-<script>
-  function setProgress(percent) {
-    const circle = document.querySelector('.circle-progress');
-    const radius = circle.r.baseVal.value;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (percent / 100) * circumference;
-
-    circle.style.strokeDashoffset = offset;
-    document.getElementById('progress-text').textContent = `${percent}%`;
-  }
-
-  // Анімація прикладу: від 0% до 75%
-  let progress = 0;
-  const target = 75;
-  const interval = setInterval(() => {
-    if (progress > target) {
-      clearInterval(interval);
-    } else {
-      setProgress(progress);
-      progress++;
-    }
-  }, 20);
-</script>
 </body>
 </html>

@@ -10,8 +10,8 @@
 
 <header>
     <div class="nav-container">
-        <a href="main_admin.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-        <a href="main_admin.html" class="tab-link">На головну</a>
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
         <p>Адміністратор</p>
@@ -23,18 +23,34 @@
 
 
 <div class="products-list" id="products-list">
-    <button class="product-line" onclick="location.href='placeholder1.html'">
+    {% for p in products %}
+      <button class="product-line" onclick="createAdminTask({{ p.id }})">
         <div class="product-info">
-            <p>Виріб 1</p>
+          <p>{{ p.name }}</p>
         </div>
-    </button>
-
-    <button class="product-line" onclick="location.href='placeholder2.html'">
-        <div class="product-info">
-            <p>Виріб 2</p>
-        </div>
-    </button>
+      </button>
+    {% endfor %}
 </div>
 
+<script>
+  function createAdminTask(productId) {
+    fetch('{{ url_for("create_admin_task") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ product_id: productId })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.admin_task_id){
+        window.location.href = '{{ url_for("add_task") }}?admin_task_id=' + data.admin_task_id;
+      } else if(data.error){
+        alert('Error: ' + data.error);
+      }
+    })
+    .catch(error => alert('Fetch error: ' + error));
+  }
+</script>
 </body>
 </html>

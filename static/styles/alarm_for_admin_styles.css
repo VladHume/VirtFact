@@ -1,0 +1,120 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+header{
+    display: flex;
+    background-color: #F4F4F4;
+    height: 100px;
+    position: relative;
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-container{
+    width: auto;
+    height: 100%;
+    margin-left: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.tab-link{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 20px;
+    color: #232323;
+    text-decoration: none;
+    font-variant: all-petite-caps;
+}
+
+.tab-link:hover{
+    text-decoration: underline;
+}
+
+.tab-link-icon{
+    width: 36px;
+    height: 36px;
+}
+
+.account-info{
+    width: auto;
+    height: 100%;
+    margin-right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.account-info img{
+    width: 36px;
+    height: 36px;
+}
+
+.account-info p{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 16px;
+    color: #232323;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f3f3f3;
+    margin: 40px auto;
+    padding: 40px;
+    max-width: 1200px;
+    height: auto;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    align-items: flex-start; /* вирівнює вміст по лівому краю */
+    margin-right: 40px;
+    margin-left: 40px;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.info-text{
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600; /* semi-bold */
+    font-size: 16px;
+    color: #232323;
+    /*margin-bottom: 10px;*/
+}
+
+
+.submit-button {
+    background-color: #0072CE;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+    background-color: #005fa8;
+}

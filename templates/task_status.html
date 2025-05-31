@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Статус завдань</title>
+    <link rel="stylesheet" href="../static/styles/assign_task_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+    <div class="nav-container">
+        <a href="{{ url_for('home') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+        <a href="{{ url_for('home') }}" class="tab-link">На головну</a>
+    </div>
+    <div class="account-info">
+        <p>Адміністратор</p>
+        <img src="../static/icons/account.png" alt="Адміністратор">
+    </div>
+</header>
+
+<main class="main-container">
+    <div class="left-panel">
+        <div id="hierarchyContainer">
+        {% if product %}
+            <div class="product-wrapper">
+                <div class="item-row">
+                    <div class="product" onclick="renderOperations({{ product.id }}, 'product', {{ admin_task.id }})">{{ product.name }}</div>
+                </div>
+
+                {% for block in product.blocks %}
+                    <div class="block-wrapper">
+                        <div class="item-row">
+                            <div class="block" onclick="renderOperations({{ block.id }}, 'block', {{ admin_task.id }})">{{ block.name }}</div>
+                        </div>
+
+                        {% for detail in block.details %}
+                            <div class="item-row">
+                                <div class="detail" onclick="renderOperations({{ detail.id }}, 'detail', {{ admin_task.id }})">{{ detail.name }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        </div>
+    </div>
+
+    <div class="right-panel" id="operationPanel"></div>
+</main>
+
+<div class="btn-container">
+    <button class="confirm-btn" onclick="location.href='{{ url_for('home') }}'">Готово</button>
+</div>
+
+<script>
+    const operationPanel = document.getElementById("operationPanel");
+
+    const typeMap = {
+        product: 'Продукт',
+        block: 'Блок',
+        detail: 'Деталь'
+    };
+
+    let selectedComponent = {
+        id: null,
+        type: null
+    };
+
+    const employees = {{ employees | tojson }};
+    const assignedTasksList = {{ task_map | tojson }};
+
+    const assignedTasks = {};
+    assignedTasksList.forEach(t => {
+        const key = JSON.stringify([t.operation_id, t.component_type, t.product_id]);
+        assignedTasks[key] = {
+            employee_name: getEmployeeNameById(t.responsible_id) || 'Невідомий',
+            status: t.status || '—'
+        };
+    });
+
+    function getEmployeeNameById(id) {
+        const emp = employees.find(e => e.id === id);
+        return emp ? emp.name : null;
+    }
+
+    function renderOperations(componentId, componentType, aTaskId) {
+        selectedComponent.id = componentId;
+        selectedComponent.type = componentType;
+
+        fetch(`/get_operations/${componentType}/${componentId}`)
+            .then(response => response.json())
+            .then(data => {
+                const panel = document.querySelector('.right-panel');
+                const translatedType = typeMap[componentType] || componentType;
+
+                panel.innerHTML = `
+                    <h3>${translatedType}: ${data.component_name}</h3>
+                    <div class="operations-list">
+                        ${data.operations.map(op => {
+                            const key = JSON.stringify([op.id, componentType, componentId]);
+                            const assigned = assignedTasks[key];
+                            const label = assigned
+                                ? `Виконавець: ${assigned.employee_name}<br>Статус: ${assigned.status}`
+                                : "Не призначено";
+
+                            const style = assigned
+                                ? 'background-color: #f0f0f0; padding: 5px; border-radius: 6px;'
+                                : 'background-color: #ffeaea; padding: 5px; border-radius: 6px;';
+
+                            return `
+                                <div class="product-line">
+                                    <div class="product-info">
+                                        <p>Назва: ${op.name}</p>
+                                    </div>
+                                    <div class="operations">
+                                        <div class="assignment-info" style="${style}">
+                                            ${label}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            });
+    }
+
+    window.onload = () => {
+        {% if product %}
+            renderOperations({{ product.id }}, 'product', {{ admin_task.id }});
+        {% endif %}
+    };
+</script>
+
+</body>
+</html>

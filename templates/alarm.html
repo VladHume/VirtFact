@@ -10,25 +10,35 @@
 
 <header>
   <div class="nav-container">
-    <a href="main_for_user.html"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
-    <a href="main_for_user.html" class="tab-link">На головну</a>
+    <a href="{{ url_for('home_for_employee') }}"><img src="../static/icons/home.png" alt="На головну" class="tab-link-icon"></a>
+    <a href="{{ url_for('home_for_employee') }}" class="tab-link">На головну</a>
   </div>
   <div class="account-info">
-    <p>Гуменюк Владислав</p>
+    <p>{{ name }}</p>
     <img src="../static/icons/account.png" alt="Користувач">
   </div>
 </header>
-<div class="container">
-  <div class="content">
-    <p class="name-of-task">Завдання 1</p>
-    <label for="operationName">Опишіть вашу проблему:</label>
-    <input type="text" id="operationName" placeholder="Опишіть проблему детальніше...">
+
+{% if alarm %}
+  <div class="container">
+    <div class="content">
+      <p class="name-of-task">Завдання 1</p>
+      <label>Опис проблеми:</label>
+      <p class="alarm-text">{{ alarm }}</p>
+    </div>
   </div>
-  <button class="submit-button">ПОВІДОМИТИ</button>
-</div>
-
-
-
+{% else %}
+  <form action="{{ url_for('submit_alarm', task_id=task_id) }}" method="POST">
+    <div class="container">
+      <div class="content">
+        <p class="name-of-task">Завдання 1</p>
+        <label for="operationName">Опишіть вашу проблему:</label>
+        <input type="text" id="operationName" name="operationName" placeholder="Опишіть проблему детальніше...">
+      </div>
+      <button type="submit" class="submit-button">ПОВІДОМИТИ</button>
+    </div>
+  </form>
+{% endif %}
 
 </body>
 </html>

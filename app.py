@@ -1,5 +1,6 @@
 import os
 import json
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, SECRET_KEY
 from extensions import db, migrate
@@ -8,6 +9,7 @@ from werkzeug.utils import secure_filename
 from models import *
 from functools import wraps
 import shutil
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
@@ -25,6 +27,28 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def task_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        employee_id = session.get('employee_id')
+
+        if not employee_id:
+            return redirect(url_for('login'))  # або інша логіка, якщо неавторизований
+
+        # Перевіряємо чи є "Alarm"
+        alarm_task = Task.query.filter_by(responsible_id=employee_id, status='Alarm').first()
+        if alarm_task:
+            alarm = Alarm.query.filter_by(task_id=alarm_task.id).first()
+            return redirect(url_for('alarm', alarm=alarm.id, task_id=alarm_task.id))
+
+        # Перевіряємо чи є "У роботі"
+        working_task = Task.query.filter_by(responsible_id=employee_id, status='У роботі').first()
+        if working_task:
+            return redirect(url_for('instruction_page', task_id=working_task.id))
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -49,6 +73,7 @@ def login():
             session['company_id'] = account.company_id
             if account.is_admin:
                 session['name'] = "Адміністратор"
+                return redirect(url_for('home'))
             else:
                 employee = Employee.query.filter_by(phone_number=login).first()
                 if employee:
@@ -56,7 +81,8 @@ def login():
                     session['name'] = f"{employee.surname} {employee.name} {employee.middle_name}"
                 else:
                     session['name'] = None
-            return redirect(url_for('home'))
+                return redirect(url_for('home_for_employee'))
+
         else:
             session['login_flash'] = ('error', 'Невірний логін або пароль')
             return redirect(url_for('login'))
@@ -109,7 +135,40 @@ def register():
 @app.route('/home', methods=['GET', 'POST'])
 @login_required
 def home():
-    return render_template('main_admin.html', name=session['name'])
+    company_id = session['company_id']
+    tasks = aTask.query.filter_by(company_id=company_id).all()
+
+    task_data = []
+    for task in tasks:
+        product = Product.query.filter_by(id=task.product_id, company_id=company_id).first()
+        if product:
+            task_data.append({
+                'task_id': task.id,
+                'product_id': product.id,
+                'product_name': product.name
+            })
+
+    return render_template('main_admin.html', name=session['name'], task_data=task_data)
+
+@app.route('/home_for_employee', methods=['GET', 'POST'])
+@login_required
+@task_required
+def home_for_employee():
+    employee_id = session['employee_id']
+    tasks = Task.query.filter(
+        Task.responsible_id == employee_id,
+        Task.status != "Завершене"
+    ).all()
+    task_data = []
+    for task in tasks:
+        operation = Operation.query.filter_by(id=task.operation_id).first()
+        if operation:
+            task_data.append({
+                'task_id': task.id,
+                'operation_id': operation.id,
+                'operation_name': operation.name
+            })
+    return render_template('main_for_user.html', name=session['name'], tasks=task_data)
 
 @app.route('/employees', methods=['GET', 'POST'])
 @login_required
@@ -289,7 +348,6 @@ def edit_material(material_id):
     db.session.commit()
     return '', 204
 
-
 @app.route('/delete-material/<int:material_id>', methods=['DELETE'])
 @login_required
 def delete_material(material_id):
@@ -299,7 +357,6 @@ def delete_material(material_id):
     db.session.delete(material)
     db.session.commit()
     return '', 204
-
 
 @app.route('/edit_locations_list')
 @login_required
@@ -336,7 +393,6 @@ def edit_location(location_id):
     location.name = new_name
     db.session.commit()
     return '', 204
-
 
 @app.route('/delete-location/<int:location_id>', methods=['DELETE'])
 @login_required
@@ -459,7 +515,6 @@ def add_block(product_id):
         db.session.commit()
         return '', 204  # success
     return 'Missing name', 400
-
 
 @app.route('/add_detail/<int:block_id>', methods=['POST'])
 @login_required
@@ -666,6 +721,7 @@ def delete_operation(operation_id):
     db.session.commit()
 
     return jsonify({"status": "success"})
+
 @app.route('/update_operation/<int:operation_id>', methods=['POST'])
 @login_required
 def update_operation(operation_id):
@@ -830,6 +886,375 @@ def edit_operation(operation_id):
         text_files=text_files
     )
 
+@app.route('/task_product_list')
+@login_required
+def task_product_list():
+    company_id = session.get('company_id')
+    is_admin = session.get('is_admin')
+    if not company_id:
+        return "Company ID not found in session", 400
+
+    products = Product.query.filter_by(company_id=company_id).all()
+    return render_template('add_task.html', products=products)
+
+@app.route('/create_admin_task', methods=['POST'])
+@login_required
+def create_admin_task():
+    data = request.get_json()
+    product_id = data.get('product_id')
+    company_id = session.get('company_id')
+    if not company_id:
+        return jsonify({'error': 'Company ID not found'}), 400
+    if not product_id:
+        return jsonify({'error': 'Product ID is required'}), 400
+
+    admin_task = aTask(product_id=product_id, company_id=company_id)
+    db.session.add(admin_task)
+    db.session.commit()
+
+    return jsonify({'admin_task_id': admin_task.id})
+
+@app.route('/add_task', methods=['POST', 'GET'])
+@login_required
+def add_task():
+    company_id = session.get('company_id')
+    if not company_id:
+        return "Company ID not found in session", 400
+
+    employees = Employee.query.filter_by(company_id=company_id).all()
+    employee_data = [
+        {"id": e.id, "name": f"{e.surname} {e.name} {e.middle_name}"}
+        for e in employees
+    ]
+
+    admin_task_id = request.args.get('admin_task_id', type=int)
+    product_id = request.args.get('product_id', type=int)
+
+    if admin_task_id:
+        admin_task = aTask.query.filter_by(id=admin_task_id, company_id=company_id).first()
+    elif product_id:
+        admin_task = aTask(product_id=product_id, company_id=company_id)
+        db.session.add(admin_task)
+        db.session.commit()
+    else:
+        return "Product ID or Admin Task ID is required", 400
+
+    product = Product.query.filter_by(id=admin_task.product_id, company_id=company_id).first()
+
+    # Знайдемо вже створені завдання
+    existing_tasks = Task.query.filter_by(admin_task_id=admin_task.id).all()
+    task_map = [
+        {
+            "component_type": t.component_type,
+            "product_id": t.product_id,
+            "operation_id": t.operation_id,
+            "id": t.id,
+            "responsible_id": t.responsible_id,
+            "status": t.status,
+        }
+        for t in existing_tasks
+    ]
+
+    return render_template(
+        'assign_task.html',
+        product=product,
+        employees=employee_data,
+        admin_task=admin_task,
+        task_map=task_map  # передаємо у шаблон
+    )
+
+@app.route('/create_task', methods=['POST'])
+@login_required
+def create_task():
+    data = request.get_json()
+    operation_id = data.get('operation_id')
+    employee_id = data.get('employee_id')
+    component_id = data.get('component_id')
+    component_type = data.get('component_type')
+    admin_task_id = data.get('admin_task')
+
+    company_id = session.get('company_id')
+
+    try:
+        task = Task.query.filter_by(
+            admin_task_id=admin_task_id,
+            product_id=component_id,
+            operation_id=operation_id,
+            component_type=component_type,
+            company_id=company_id
+        ).first()
+
+        if task:
+            task.responsible_id = employee_id
+        else:
+            task = Task(
+                product_id=component_id,
+                operation_id=operation_id,
+                responsible_id=employee_id,
+                status="Не активне",
+                company_id=company_id,
+                component_type=component_type,
+                admin_task_id=admin_task_id
+            )
+            db.session.add(task)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Завдання успішно призначено'})  # ← ДОДАНО
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/delete_admin_task/<int:task_id>', methods=['POST'])
+@login_required
+def delete_admin_task(task_id):
+    # Знайди запис aTask
+    admin_task = aTask.query.get(task_id)
+    if not admin_task:
+        return redirect(url_for('home'))
+
+    # Видалити пов'язані записи з tasks
+    Task.query.filter_by(admin_task_id=task_id).delete()
+
+    # Видалити сам запис з admin_tasks
+    db.session.delete(admin_task)
+    db.session.commit()
+
+    return redirect(url_for('home'))
+
+@app.route('/task_status', methods=['POST', 'GET'])
+@login_required
+def task_status():
+    company_id = session.get('company_id')
+    if not company_id:
+        return "Company ID not found in session", 400
+
+    employees = Employee.query.filter_by(company_id=company_id).all()
+    employee_data = [
+        {"id": e.id, "name": f"{e.surname} {e.name} {e.middle_name}"}
+        for e in employees
+    ]
+
+    admin_task_id = request.args.get('admin_task_id', type=int)
+    product_id = request.args.get('product_id', type=int)
+
+    if admin_task_id:
+        admin_task = aTask.query.filter_by(id=admin_task_id, company_id=company_id).first()
+    elif product_id:
+        admin_task = aTask(product_id=product_id, company_id=company_id)
+        db.session.add(admin_task)
+        db.session.commit()
+    else:
+        return "Product ID or Admin Task ID is required", 400
+
+    product = Product.query.filter_by(id=admin_task.product_id, company_id=company_id).first()
+
+    existing_tasks = Task.query.filter_by(admin_task_id=admin_task.id).all()
+    task_map = [
+        {
+            "component_type": t.component_type,
+            "product_id": t.product_id,
+            "operation_id": t.operation_id,
+            "id": t.id,
+            "responsible_id": t.responsible_id,
+            "status": t.status,
+        }
+        for t in existing_tasks
+    ]
+
+    return render_template(
+        'task_status.html',
+        product=product,
+        employees=employee_data,
+        admin_task=admin_task,
+        task_map=task_map
+    )
+
+@app.route('/instruction_page', methods=['POST', 'GET'])
+@login_required
+@task_required
+def instruction_page():
+    task_id = request.args.get('task_id')
+    task = Task.query.filter_by(id=int(task_id)).first()
+    status = task.status
+    operation = Operation.query.filter_by(id=task.operation_id).first()
+    name = operation.name
+    instruction = Instruction.query.filter_by(operation_id=operation.id).first()
+
+    photos, videos, texts = [], [], []
+
+    def normalize_path_for_url(path):
+        if path:
+            return path.replace('\\', '/')
+        return path
+
+    photo_path = ""
+    video_path = ""
+    text_path = ""
+
+    if instruction:
+        # Нормалізуємо шляхи для URL
+        photo_path = normalize_path_for_url(instruction.photo_path) or ""
+        video_path = normalize_path_for_url(instruction.video_path) or ""
+        text_path = normalize_path_for_url(instruction.text_path) or ""
+
+        # Для читання файлів із файлової системи коректно сформуємо абсолютні шляхи
+        # Якщо в базі зберігаються відносні шляхи відносно static, додаємо їх
+        base_static_path = os.path.join(os.getcwd(), 'static')  # або де у тебе корінь static
+
+        def get_fs_path(url_path):
+            # Перекладаємо URL-подібний шлях у шлях файлової системи (для os.listdir)
+            # Наприклад, 'static/uploads/text_instructions/...' => '<поточна_директорія>/static/uploads/text_instructions/...'
+            # Якщо url_path починається з "static/", відрізаємо static і додаємо base_static_path
+            if url_path.startswith('static/'):
+                relative_part = url_path[len('static/'):]
+                return os.path.join(base_static_path, relative_part)
+            else:
+                # Якщо немає static на початку, вважай як є
+                return os.path.join(base_static_path, url_path)
+
+        if photo_path:
+            photo_dir = get_fs_path(photo_path)
+            if os.path.exists(photo_dir):
+                photos = [f for f in os.listdir(photo_dir) if os.path.isfile(os.path.join(photo_dir, f))]
+
+        if video_path:
+            video_dir = get_fs_path(video_path)
+            if os.path.exists(video_dir):
+                videos = [f for f in os.listdir(video_dir) if os.path.isfile(os.path.join(video_dir, f))]
+
+        if text_path:
+            text_dir = get_fs_path(text_path)
+            if os.path.exists(text_dir):
+                texts = [f for f in os.listdir(text_dir) if os.path.isfile(os.path.join(text_dir, f))]
+
+    material_links = MaterialO.query.filter_by(operation_id=operation.id).all()
+    tool_links = ToolO.query.filter_by(operation_id=operation.id).all()
+    location_link = LocationO.query.filter_by(operation_id=operation.id).first()
+
+    material_ids = [m.material_id for m in material_links]
+    materials = Material.query.filter(Material.id.in_(material_ids)).all() if material_ids else []
+
+    tool_ids = [t.tool_id for t in tool_links]
+    tools = Tool.query.filter(Tool.id.in_(tool_ids)).all() if tool_ids else []
+
+    location = Location.query.filter_by(id=location_link.location_id).first() if location_link else None
+
+    dependent_components = dComponent.query.filter_by(operation_id=operation.id).all()
+
+    dependencies = []
+
+    for dc in dependent_components:
+        component_id = dc.component_id
+        component_type = dc.product_type
+        component_name = "Невідомо"
+        product_id = None
+
+        if component_type == "product":
+            product = Product.query.get(component_id)
+            if product:
+                component_name = product.name
+                product_id = product.id
+
+        elif component_type == "block":
+            block = Block.query.get(component_id)
+            if block:
+                component_name = block.name
+                product_id = block.product_id
+
+        elif component_type == "detail":
+            detail = Detail.query.get(component_id)
+            if detail:
+                component_name = detail.name
+                block = Block.query.get(detail.block_id)
+                if block:
+                    product_id = block.product_id
+
+        dependencies.append({
+            'type': component_type,
+            'name': component_name,
+            'product_id': product_id
+        })
+
+    return render_template(
+        'open_task.html',
+        name=name,
+        materials=materials,
+        location=location,
+        tools=tools,
+        dependencies=dependencies,
+        image_files=photos,
+        video_files=videos,
+        text_files=texts,
+        photo_path=photo_path,
+        video_path=video_path,
+        text_path=text_path,
+        emp_name = session['name'],
+        status=status,
+        task_id=task_id
+    )
+
+@app.route('/start_task/<int:task_id>')
+@login_required
+def start_task(task_id):
+    task = Task.query.filter_by(id=task_id).first()
+    task.status = "У роботі"
+    task.start_time = datetime.utcnow()
+    db.session.add(task)
+    db.session.commit()
+    return redirect(url_for('instruction_page', task_id=task.id))
+
+@app.route('/finish_task/<int:task_id>')
+@login_required
+def finish_task(task_id):
+    task = Task.query.filter_by(id=task_id).first()
+    task.status = "Завершене"
+    task.end_time = datetime.utcnow()
+    db.session.add(task)
+    db.session.commit()
+    return redirect(url_for('home_for_employee'))
+
+
+@app.route('/alarm')
+@login_required
+def alarm():
+    alarm_id = request.args.get('alarm')
+    task_id = request.args.get('task_id')
+
+    if alarm_id:
+        alarm_obj = Alarm.query.filter_by(id=alarm_id).first()
+        return render_template('alarm.html', name=session['name'], alarm=alarm_obj.text, task_id=task_id)
+
+    return render_template('alarm.html', name=session['name'], task_id=task_id)
+
+
+@app.route('/submit_alarm/<int:task_id>', methods=['POST', 'GET'])
+@login_required
+def submit_alarm(task_id):
+    text = request.form.get('operationName')
+    alarm = Alarm(task_id=task_id, text=text)
+    db.session.add(alarm)
+    task = Task.query.filter_by(id=task_id).first()
+    task.status = "Alarm"
+    db.session.add(task)
+    db.session.commit()
+    return redirect(url_for('alarm', alarm = alarm.id, task_id=task_id))
+
+
+def folder_create(name, relative_dir):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_dir, relative_dir)
+
+    os.makedirs(full_path, exist_ok=True)
+    target_folder = os.path.join(full_path, name)
+
+    if os.path.exists(target_folder):
+        print(f'Folder "{name}" exists!')
+    else:
+        os.mkdir(target_folder)
+        print(f'Folder "{name}" successfully created!')
+
 
 if __name__ == '__main__':
+    folder_create('uploads', 'static')
     app.run(debug=True)
