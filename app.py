@@ -139,8 +139,20 @@ def home():
     tasks = aTask.query.filter_by(company_id=company_id).all()
 
     task_data = []
+    alarm = False
+
     for task in tasks:
         product = Product.query.filter_by(id=task.product_id, company_id=company_id).first()
+
+        # Отримати відповідний запис з таблиці Task
+        actual_task = Task.query.filter_by(
+            company_id=company_id,
+            admin_task_id=task.id
+        ).first()
+
+        if actual_task and actual_task.status == 'Alarm':
+            alarm = True
+
         if product:
             task_data.append({
                 'task_id': task.id,
@@ -148,7 +160,7 @@ def home():
                 'product_name': product.name
             })
 
-    return render_template('main_admin.html', name=session['name'], task_data=task_data)
+    return render_template('main_admin.html', name=session['name'], task_data=task_data, alarm=alarm)
 
 @app.route('/home_for_employee', methods=['GET', 'POST'])
 @login_required
@@ -1072,7 +1084,6 @@ def task_status():
 
 @app.route('/instruction_page', methods=['POST', 'GET'])
 @login_required
-@task_required
 def instruction_page():
     task_id = request.args.get('task_id')
     task = Task.query.filter_by(id=int(task_id)).first()
@@ -1223,7 +1234,10 @@ def alarm():
 
     if alarm_id:
         alarm_obj = Alarm.query.filter_by(id=alarm_id).first()
-        return render_template('alarm.html', name=session['name'], alarm=alarm_obj.text, task_id=task_id)
+        if alarm_obj:
+            return render_template('alarm.html', name=session['name'], alarm=alarm_obj.text, task_id=task_id)
+        else:
+            return redirect(url_for('home_for_employee'))
 
     return render_template('alarm.html', name=session['name'], task_id=task_id)
 
@@ -1254,6 +1268,52 @@ def folder_create(name, relative_dir):
         os.mkdir(target_folder)
         print(f'Folder "{name}" successfully created!')
 
+@app.route('/alarm_for_admin')
+@login_required
+def alarm_for_admin():
+    task_id = request.args.get('task_id')
+    task = Task.query.filter_by(id=task_id).first()
+    operation_id = task.operation_id
+    operation = Operation.query.filter_by(id=operation_id).first()
+    name = session.get('name')
+    responsible_id = task.responsible_id
+    employee = Employee.query.filter_by(id=responsible_id).first()
+    responsible_name = f"{employee.surname} {employee.name} {employee.middle_name}"
+    location_o = LocationO.query.filter_by(operation_id=operation.id).first()
+    location = Location.query.filter_by(id=location_o.location_id).first()
+    location_name = location.name
+    alarm = Alarm.query.filter_by(task_id=task_id).first()
+    return render_template('alarm_for_admin.html', operation=operation.name, task_id=task_id, name=name, responsible=responsible_name, location=location_name, alarm=alarm.text)
+
+@app.route('/alarm_list_admin')
+@login_required
+def alarm_list_admin():
+    company_id = session['company_id']
+    tasks = Task.query.filter(
+        Task.company_id == company_id,
+        Task.status == "Alarm"
+    ).all()
+    task_data = []
+    for task in tasks:
+        operation = Operation.query.filter_by(id=task.operation_id).first()
+        if operation:
+            task_data.append({
+                'task_id': task.id,
+                'operation_id': operation.id,
+                'operation_name': operation.name
+            })
+    return render_template('alarm_list_admin.html', name=session['name'], tasks=task_data)
+
+@app.route('/delete_alarm/<int:task_id>')
+@login_required
+def delete_alarm(task_id):
+    task = Task.query.filter_by(id=task_id).first()
+    task.status = "У роботі"
+    db.session.add(task)
+    alarm = Alarm.query.filter_by(task_id=task_id).first()
+    db.session.delete(alarm)
+    db.session.commit()
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     folder_create('uploads', 'static')

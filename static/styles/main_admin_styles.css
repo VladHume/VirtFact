@@ -175,6 +175,19 @@ body, html {
     background-color: #232323;
 }
 
+.head-of-container-alarm{
+    top: 0;
+    width: 100%;
+    height: auto;
+    display: flex;
+    position: sticky;
+    color: white;
+    padding: 10px;
+    padding-left: 50px;
+    margin-bottom: 10px;
+    background-color: red;
+}
+
 .head-of-container p{
     font-family: 'DM Sans', sans-serif;
     font-weight: 600; /* semi-bold */

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Віртуальна виробнича лінія | Інструменти</title>
+  <link rel="stylesheet" href="../static/styles/main_for_user.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="nav-container">
+    <h1>Віртуальна виробнича лінія</h1>
+  </div>
+  <div class="account-info">
+    <p>{{ name }}</p>
+    <img src="../static/icons/account.png" alt="Адміністратор">
+  </div>
+</header>
+
+<div class="products-list" id="products-list">
+    {% for t in tasks %}
+  <button class="product-line" onclick="location.href='{{ url_for('alarm_for_admin', task_id=t.task_id) }}'">
+    <div class="product-info">
+      <p>{{ t.operation_name }}</p>
+    </div>
+  </button>
+    {% endfor %}
+
+</div>
+
+
+
+
+</body>
+</html>

@@ -64,6 +64,13 @@
   </nav>
 
   <main class="main-content">
+  {% if alarm %}
+  <a href="{{ url_for('alarm_list_admin') }}" style="text-decoration: none; color: inherit;">
+    <div class="head-of-container-alarm">
+        <p>Alarm</p>
+    </div>
+  </a>
+{% endif %}
     <div class="tasks-container">
       <div class="head-of-container">
         <p>Активні завдання</p>

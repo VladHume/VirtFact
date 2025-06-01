@@ -14,20 +14,24 @@
         <a href="main_admin.html" class="tab-link">На головну</a>
     </div>
     <div class="account-info">
-        <p>Гуменюк Владислав</p>
+        <p>{{name}}</p>
         <img src="../static/icons/account.png" alt="Користувач">
     </div>
 </header>
 <div class="container">
     <div class="content">
-        <p class="info-text">Завдання 1</p>
-        <p class="info-text">Виконавець:</p>
-        <p class="info-text">Локація:</p>
-        <p class="info-text">Опис проблеми:</p>
+        <p class="info-text">{{operation}}</p>
+        <p class="info-text">Виконавець: {{ responsible }}</p>
+        <p class="info-text">Локація: {{ location }}</p>
+        <p class="info-text">Опис проблеми: {{ alarm }}</p>
 
 
     </div>
-    <button class="submit-button">ЗНЯТИ ALARM</button>
+    <a href="{{ url_for('delete_alarm', task_id=task_id) }}">
+        <button class="submit-button" type="button">ЗНЯТИ ALARM</button>
+    </a>
+
+
 
 </div>
 
