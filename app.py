@@ -337,16 +337,17 @@ def edit_materials_list():
 @app.route('/add-material', methods=['POST'])
 @login_required
 def add_material():
-    if request.method == 'POST':
-        data = request.get_json()
-        name = data.get('name')
-        company_id = session.get('company_id')
-        if not company_id:
-            return "Company ID not found in session", 400
-        material = Material(name=name, company_id=company_id)
-        db.session.add(material)
-        db.session.commit()
-    return redirect(url_for('edit_materials_list'))
+    data = request.get_json()
+    name = data.get('name')
+    company_id = session.get('company_id')
+    if not company_id:
+        return jsonify({"error": "Company ID not found in session"}), 400
+
+    material = Material(name=name, company_id=company_id)
+    db.session.add(material)
+    db.session.commit()
+
+    return jsonify({"id": material.id, "name": material.name})
 
 @app.route('/edit-material/<int:material_id>', methods=['PUT'])
 @login_required
@@ -1317,4 +1318,4 @@ def delete_alarm(task_id):
 
 if __name__ == '__main__':
     folder_create('uploads', 'static')
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
