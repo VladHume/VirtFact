@@ -64,16 +64,139 @@
   </nav>
 
   <main class="main-content">
+  {% if alarm %}
   <a href="{{ url_for('alarm_list_admin') }}" style="text-decoration: none; color: inherit;">
-    <div id="alarm-block" class="head-of-container-alarm" style="display: none;">
+    <div class="head-of-container-alarm">
         <p>Alarm</p>
     </div>
-    </a>
+  </a>
+{% endif %}
     <div class="tasks-container">
-      <div class="head-of-container">
-        <p>Активні завдання</p>
+    <div class="tab">
+        <button class="tablinks" onclick="openTasks(event, 'active')">Активні завдання</button>
+        <button class="tablinks" onclick="openTasks(event, 'not_started')">Не початі</button>
+        <button class="tablinks" onclick="openTasks(event, 'done')">Завершені</button>
+        <button class="tablinks" onclick="openTasks(event, 'with_alarms')">З тривогами</button>
+    </div>
+
+      <div id="active" class="tabcontent">
+          {% for td in task_data %}
+            <div class="task-line">
+              <div class="task-left">
+                  <div class="task-status">
+
+                    </div>
+                <div class="task-info">
+                  <p>{{ td.product_name }}</p>
+                </div>
+              </div>
+
+                <div class="more-info-btns">
+                    <div class="more-info-btn">
+                <a href="{{ url_for('task_status', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Детальніше</span>
+                </a>
+              </div>
+              <div class="more-info-btn">
+                <a href="{{ url_for('add_task', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Редагувати</span>
+                </a>
+              </div>
+              <div class="more-info-btn">
+                <form class="more-info" action="{{ url_for('delete_admin_task', task_id=td.task_id) }}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити це завдання?')">
+                  <button class="more-info-text" type="submit">Видалити</button>
+                </form>
+              </div>
+                </div>
+
+            </div>
+          {% endfor %}
+
+
+
+
+
       </div>
-      <div class="tasks-list">
+
+    <div id="not_started" class="tabcontent">
+          {% for td in task_data %}
+            <div class="task-line">
+              <div class="task-left">
+                  <div class="task-status">
+
+                    </div>
+                <div class="task-info">
+                  <p>{{ td.product_name }}</p>
+                </div>
+              </div>
+
+                <div class="more-info-btns">
+                    <div class="more-info-btn">
+                <a href="{{ url_for('task_status', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Детальніше</span>
+                </a>
+              </div>
+              <div class="more-info-btn">
+                <a href="{{ url_for('add_task', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Редагувати</span>
+                </a>
+              </div>
+              <div class="more-info-btn">
+                <form class="more-info" action="{{ url_for('delete_admin_task', task_id=td.task_id) }}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити це завдання?')">
+                  <button class="more-info-text" type="submit">Видалити</button>
+                </form>
+              </div>
+                </div>
+
+            </div>
+          {% endfor %}
+
+
+
+
+
+      </div>
+
+    <div id="done" class="tabcontent">
+          {% for td in task_data %}
+            <div class="task-line">
+              <div class="task-left">
+                  <div class="task-status">
+
+                    </div>
+                <div class="task-info">
+                  <p>{{ td.product_name }}</p>
+                </div>
+              </div>
+
+                <div class="more-info-btns">
+                    <div class="more-info-btn">
+                <a href="{{ url_for('task_status', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Детальніше</span>
+                </a>
+              </div>
+              <div class="more-info-btn">
+                <a href="{{ url_for('add_task', admin_task_id=td.task_id, product_id=td.product_id) }}" class="more-info">
+                  <span class="more-info-text">Редагувати</span>
+                </a>
+              </div>
+              <div class="more-info-btn">
+                <form class="more-info" action="{{ url_for('delete_admin_task', task_id=td.task_id) }}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити це завдання?')">
+                  <button class="more-info-text" type="submit">Видалити</button>
+                </form>
+              </div>
+                </div>
+
+            </div>
+          {% endfor %}
+
+
+
+
+
+      </div>
+
+    <div id="with_alarms" class="tabcontent">
           {% for td in task_data %}
             <div class="task-line">
               <div class="task-left">
@@ -122,22 +245,29 @@
 
   </main>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
-<script type="text/javascript">
-    var socket = io();
 
-    // Опитування кожні 5 секунд
-    setInterval(function(){
-        socket.emit('check_alarm');
-    }, 5000);
+<script >
+    function openTasks(evt, task_status) {
+  // Declare all variables
+  var i, tabcontent, tablinks;
 
-    socket.on('alarm_status', function(data){
-        if(data.alarm){
-            document.getElementById('alarm-block').style.display = 'block';
-        } else {
-            document.getElementById('alarm-block').style.display = 'none';
-        }
-    });
+  // Get all elements with class="tabcontent" and hide them
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+
+  // Get all elements with class="tablinks" and remove the class "active"
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+
+  // Show the current tab, and add an "active" class to the button that opened the tab
+  document.getElementById(task_status).style.display = "block";
+  evt.currentTarget.className += " active";
+}
 </script>
+
 </body>
 </html>
