@@ -139,29 +139,48 @@ def home():
     company_id = session['company_id']
     tasks = aTask.query.filter_by(company_id=company_id).all()
 
-    task_data = []
+    # Списки для кожного статусу
+    inactive_tasks = []
+    in_progress_tasks = []
+    completed_tasks = []
+    alarm_tasks = []
+
     alarm = False
 
     for task in tasks:
         product = Product.query.filter_by(id=task.product_id, company_id=company_id).first()
 
-        # Отримати відповідний запис з таблиці Task
         actual_task = Task.query.filter_by(
             company_id=company_id,
             admin_task_id=task.id
         ).first()
 
-        if actual_task and actual_task.status == 'Alarm':
-            alarm = True
-
-        if product:
-            task_data.append({
+        if actual_task:
+            task_info = {
                 'task_id': task.id,
-                'product_id': product.id,
-                'product_name': product.name
-            })
+                'product_id': product.id if product else None,
+                'product_name': product.name if product else 'Unknown'
+            }
 
-    return render_template('main_admin.html', name=session['name'], task_data=task_data, alarm=alarm)
+            if actual_task.status == 'Не активне':
+                inactive_tasks.append(task_info)
+            elif actual_task.status == 'У роботі':
+                in_progress_tasks.append(task_info)
+            elif actual_task.status == 'Завершене':
+                completed_tasks.append(task_info)
+            elif actual_task.status == 'Alarm':
+                alarm_tasks.append(task_info)
+                alarm = True
+
+    return render_template(
+        'main_admin.html',
+        name=session['name'],
+        inactive_tasks=inactive_tasks,
+        in_progress_tasks=in_progress_tasks,
+        completed_tasks=completed_tasks,
+        alarm_tasks=alarm_tasks,
+        alarm=alarm
+    )
 
 @socketio.on('check_alarm')
 def handle_check_alarm():
@@ -1251,11 +1270,11 @@ def alarm():
     if alarm_id:
         alarm_obj = Alarm.query.filter_by(id=alarm_id).first()
         if alarm_obj:
-            return render_template('alarm.html', name=session['name'], alarm=alarm_obj.text, task_id=task_id)
+            return render_template('alarm.html', name=session['name'], alarm=alarm_obj.text, task_id=task_id, alarm_id=alarm_id)
         else:
             return redirect(url_for('home_for_employee'))
 
-    return render_template('alarm.html', name=session['name'], task_id=task_id)
+    return render_template('alarm.html', name=session['name'], task_id=task_id, alarm_id=alarm_id)
 
 
 @app.route('/submit_alarm/<int:task_id>', methods=['POST', 'GET'])
@@ -1325,8 +1344,10 @@ def alarm_list_admin():
 def delete_alarm(task_id):
     task = Task.query.filter_by(id=task_id).first()
     task.status = "У роботі"
+
     db.session.add(task)
     alarm = Alarm.query.filter_by(task_id=task_id).first()
+    socketio.emit('alarm_cleared', {'alarm_id': alarm.id})
     db.session.delete(alarm)
     db.session.commit()
     return redirect(url_for('home')) 

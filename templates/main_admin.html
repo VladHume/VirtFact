@@ -60,17 +60,21 @@
           <span>Редагувати список працівників</span>
         </a>
       </li>
+        <li>
+        <a href="{{ url_for('login') }}">
+            <img src="../static/icons/delete.png" alt=" ">
+          <span>Вийти</span>
+        </a>
+      </li>
     </ul>
   </nav>
 
   <main class="main-content">
-  {% if alarm %}
-  <a href="{{ url_for('alarm_list_admin') }}" style="text-decoration: none; color: inherit;">
-    <div class="head-of-container-alarm">
-        <p>Alarm</p>
-    </div>
-  </a>
-{% endif %}
+    <a href="{{ url_for('alarm_list_admin') }}" style="text-decoration: none; color: inherit;">
+        <div id="alarm-block" class="head-of-container-alarm" style="display: none;">
+            <p>Alarm</p>
+        </div>
+    </a>
     <div class="tasks-container">
     <div class="tab">
         <button class="tablinks" onclick="openTasks(event, 'active')">Активні завдання</button>
@@ -80,7 +84,7 @@
     </div>
 
       <div id="active" class="tabcontent">
-          {% for td in task_data %}
+          {% for td in in_progress_tasks %}
             <div class="task-line">
               <div class="task-left">
                   <div class="task-status">
@@ -119,7 +123,7 @@
       </div>
 
     <div id="not_started" class="tabcontent">
-          {% for td in task_data %}
+          {% for td in inactive_tasks %}
             <div class="task-line">
               <div class="task-left">
                   <div class="task-status">
@@ -158,7 +162,7 @@
       </div>
 
     <div id="done" class="tabcontent">
-          {% for td in task_data %}
+          {% for td in completed_tasks %}
             <div class="task-line">
               <div class="task-left">
                   <div class="task-status">
@@ -197,7 +201,7 @@
       </div>
 
     <div id="with_alarms" class="tabcontent">
-          {% for td in task_data %}
+          {% for td in alarm_tasks %}
             <div class="task-line">
               <div class="task-left">
                   <div class="task-status">
@@ -245,6 +249,23 @@
 
   </main>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+<script type="text/javascript">
+    var socket = io();
+
+    // Опитування кожні 5 секунд
+    setInterval(function(){
+        socket.emit('check_alarm');
+    }, 5000);
+
+    socket.on('alarm_status', function(data){
+        if(data.alarm){
+            document.getElementById('alarm-block').style.display = 'block';
+        } else {
+            document.getElementById('alarm-block').style.display = 'none';
+        }
+    });
+</script>
 
 <script >
     function openTasks(evt, task_status) {

@@ -40,5 +40,18 @@
   </form>
 {% endif %}
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+<script type="text/javascript">
+    var socket = io();
+
+    // Слухаємо подію, що тривога знята
+    socket.on('alarm_cleared', function(data) {
+        // Перевіряємо чи ця тривога стосується нас
+        if (data.alarm_id == '{{ alarm_id }}') {
+            window.location.href = "{{ url_for('home_for_employee') }}";
+        }
+    });
+</script>
+
 </body>
 </html>
