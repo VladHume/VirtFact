@@ -10,12 +10,13 @@ from models import *
 from functools import wraps
 import shutil
 from datetime import datetime
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 app.config['SECRET_KEY'] = SECRET_KEY
-
+socketio = SocketIO(app)
 db.init_app(app)
 migrate.init_app(app, db)
 
@@ -161,6 +162,20 @@ def home():
             })
 
     return render_template('main_admin.html', name=session['name'], task_data=task_data, alarm=alarm)
+
+@socketio.on('check_alarm')
+def handle_check_alarm():
+    company_id = session['company_id']
+    tasks = aTask.query.filter_by(company_id=company_id).all()
+
+    alarm = False
+    for task in tasks:
+        actual_task = Task.query.filter_by(company_id=company_id, admin_task_id=task.id).first()
+        if actual_task and actual_task.status == 'Alarm':
+            alarm = True
+            break
+
+    emit('alarm_status', {'alarm': alarm})
 
 @app.route('/home_for_employee', methods=['GET', 'POST'])
 @login_required
@@ -1314,8 +1329,9 @@ def delete_alarm(task_id):
     alarm = Alarm.query.filter_by(task_id=task_id).first()
     db.session.delete(alarm)
     db.session.commit()
-    return redirect(url_for('home'))
+    return redirect(url_for('home')) 
 
 if __name__ == '__main__':
     folder_create('uploads', 'static')
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+

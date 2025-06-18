@@ -64,13 +64,11 @@
   </nav>
 
   <main class="main-content">
-  {% if alarm %}
   <a href="{{ url_for('alarm_list_admin') }}" style="text-decoration: none; color: inherit;">
-    <div class="head-of-container-alarm">
+    <div id="alarm-block" class="head-of-container-alarm" style="display: none;">
         <p>Alarm</p>
     </div>
-  </a>
-{% endif %}
+    </a>
     <div class="tasks-container">
       <div class="head-of-container">
         <p>Активні завдання</p>
@@ -124,6 +122,22 @@
 
   </main>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+<script type="text/javascript">
+    var socket = io();
 
+    // Опитування кожні 5 секунд
+    setInterval(function(){
+        socket.emit('check_alarm');
+    }, 5000);
+
+    socket.on('alarm_status', function(data){
+        if(data.alarm){
+            document.getElementById('alarm-block').style.display = 'block';
+        } else {
+            document.getElementById('alarm-block').style.display = 'none';
+        }
+    });
+</script>
 </body>
 </html>
