@@ -37,15 +37,15 @@ def task_required(f):
         employee_id = session.get('employee_id')
 
         if not employee_id:
-            return redirect(url_for('login'))  # або інша логіка, якщо неавторизований
+            return redirect(url_for('login'))
 
-        # Перевіряємо чи є "Alarm"
+        # Check if there is an "Alarm"
         alarm_task = Task.query.filter_by(responsible_id=employee_id, status='Alarm').first()
         if alarm_task:
             alarm = Alarm.query.filter_by(task_id=alarm_task.id).first()
             return redirect(url_for('alarm', alarm=alarm.id, task_id=alarm_task.id))
 
-        # Перевіряємо чи є "У роботі"
+        # Check if there is "У роботі"
         working_task = Task.query.filter_by(responsible_id=employee_id, status='У роботі').first()
         if working_task:
             return redirect(url_for('instruction_page', task_id=working_task.id))
@@ -92,30 +92,30 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Перевірка на наявність повідомлень у сесії для реєстрації
+    # Checking for messages in the session for registration
     if 'register_flash' in session:
         category, message = session['register_flash']
         flash(message, category)
-        session.pop('register_flash')  # Видаляємо повідомлення з сесії після його виведення
+        session.pop('register_flash')  # Delete a message from the session after it is displayed
 
     if request.method == "POST":
         phone_number = request.form['phone-number']
         company_name = request.form['company-name']
         password = request.form['password']
 
-        # Перевірка на дублювання назви компанії
+        # Check for duplicate company names
         existing_company = Company.query.filter_by(name=company_name).first()
         if existing_company:
             session['register_flash'] = ('error', 'Компанія з такою назвою вже існує')
             return redirect(url_for('register'))
 
-        # Перевірка на дублювання номера телефону
+        # Phone number duplicate check
         existing_account = Account.query.filter_by(login=phone_number).first()
         if existing_account:
             session['register_flash'] = ('error', 'Акаунт з таким номером телефону вже існує')
             return redirect(url_for('register'))
 
-        # Створення нової компанії та акаунта
+        # Creating a new company and account
         company = Company(name=company_name)
         db.session.add(company)
         db.session.commit()
@@ -129,7 +129,7 @@ def register():
         db.session.add(account)
         db.session.commit()
 
-        return redirect(url_for('login'))  # Перенаправлення на сторінку логіну
+        return redirect(url_for('login'))  # Redirect to login page
 
     return render_template('register.html')
 
@@ -139,7 +139,7 @@ def home():
     company_id = session['company_id']
     tasks = aTask.query.filter_by(company_id=company_id).all()
 
-    # Списки для кожного статусу
+    # Lists for each status
     inactive_tasks = []
     in_progress_tasks = []
     completed_tasks = []
@@ -248,7 +248,7 @@ def add_employee_action():
         photo = request.files['photo']
         password = request.form['password']
 
-        # Якщо акаунт з таким логіном (тобто номером телефону) вже існує
+        # If an account with such a login (i.e. phone number) already exists
         existing_account = Account.query.filter_by(login=phone).first()
         if existing_account:
             session['add_emp_flash'] = ('error', 'Акаунт з таким номером телефону вже існує')
@@ -291,12 +291,12 @@ def delete_employee(employee_id):
     if not employee:
         return jsonify({'error': 'Працівника не знайдено'}), 404
 
-    # Видалення акаунта
+    # Account deletion
     account = Account.query.filter_by(login=employee.phone_number).first()
     if account:
         db.session.delete(account)
 
-    # Видалення фото, якщо воно існує
+    # Delete the photo if it exists
     if employee.photo_path and os.path.exists(employee.photo_path):
         try:
             os.remove(employee.photo_path)
@@ -315,7 +315,7 @@ def edit_employee(employee_id):
         flash('Працівника не знайдено', 'error')
         return redirect(url_for('employees'))
 
-    # Отримати відповідний акаунт
+    # Get the right account
     account = Account.query.filter_by(login=employee.phone_number).first()
 
     if request.method == 'POST':
@@ -325,14 +325,14 @@ def edit_employee(employee_id):
         new_phone = request.form['phone']
         photo = request.files.get('photo')
 
-        # Перевірка: якщо номер змінено — чи не зайнятий він іншим акаунтом
+        # Check: if the number has been changed, is it occupied by another account?
         if new_phone != employee.phone_number:
             existing_account = Account.query.filter_by(login=new_phone).first()
             if existing_account:
                 flash('Акаунт з таким номером телефону вже існує', 'error')
                 return redirect(url_for('edit_employee', employee_id=employee.id))
             if account:
-                account.login = new_phone  # оновлюємо логін акаунта
+                account.login = new_phone  # update account login
 
         if photo and allowed_file(photo.filename):
             if employee.photo_path:
@@ -342,12 +342,12 @@ def edit_employee(employee_id):
 
             ext = os.path.splitext(photo.filename)[1]
             unique_name = f"{uuid.uuid4().hex}{ext}"
-            full_path = os.path.join(app.root_path, UPLOAD_FOLDER, unique_name)  # повний шлях для збереження
+            full_path = os.path.join(app.root_path, UPLOAD_FOLDER, unique_name)  # full path to save
             photo.save(full_path)
             photo_path = os.path.join('uploads', unique_name)
             employee.photo_path = photo_path
 
-        # Оновлення працівника
+        # Employee update
         employee.name = name
         employee.surname = surname
         employee.middle_name = patronymic
@@ -517,7 +517,7 @@ def add_product():
         flash("Відсутній company_id в сесії", 'error')
         return redirect(url_for('home'))
 
-    # Обробка POST-запиту — додавання нового виробу
+    # POST request processing - adding a new product
     if request.method == 'POST':
         product_name = request.form.get('productName')
 
@@ -530,17 +530,17 @@ def add_product():
             flash("Такий виріб вже існує", 'error')
             return redirect(url_for('add_product'))
 
-        # Додати виріб
+        # Add a product
         product = Product(name=product_name, company_id=company_id)
         db.session.add(product)
         db.session.commit()
 
         flash("Виріб додано успішно", 'success')
 
-        # Редірект із передачею product_id
+        # Redirect with product_id passing
         return redirect(url_for('add_product', product_id=product.id))
 
-    # Обробка GET-запиту
+    # GET request processing
     product = None
     selected_component = None
 
@@ -560,7 +560,7 @@ def add_block(product_id):
         block = Block(name=block_name, product_id=product_id)
         db.session.add(block)
         db.session.commit()
-        return '', 204  # success
+        return '', 204  # успіх
     return 'Missing name', 400
 
 @app.route('/add_detail/<int:block_id>', methods=['POST'])
@@ -587,7 +587,7 @@ def delete_product(product_id):
     if not product:
         return jsonify({'error': 'Product not found'}), 404
 
-    # Якщо потрібно, також видаляємо блоки й деталі
+    # If necessary, we also remove blocks and parts.
     for block in product.blocks:
         for detail in block.details:
             db.session.delete(detail)
@@ -638,17 +638,17 @@ def add_operation(component_id):
     materials = Material.query.filter_by(company_id=company_id).all()
     tools = Tool.query.filter_by(company_id=company_id).all()
 
-    # Приклад логіки залежно від типу
+    # Example of type-dependent logic
     dependencies = []
     if component_type == 'block':
-        # Отримати інші блоки цього виробу
+        # Get other blocks of this product
         block = Block.query.get(component_id)
         dependencies = Block.query.filter(
             Block.product_id == block.product_id,
             Block.id != component_id
         ).all()
     elif component_type == 'detail':
-        # Отримати інші деталі цього блоку
+        # Get other details of this block
         detail = Detail.query.get(component_id)
         dependencies = Detail.query.filter(
             Detail.block_id == detail.block_id,
@@ -696,30 +696,30 @@ def save_operation():
     location_id = int(data.get("location"))
     tool_ids = data.getlist("tools[]")
     material_ids = data.getlist("materials[]")
-    dependency_ids = data.getlist("dependencies[]")  # формат: ["type:id", ...]
+    dependency_ids = data.getlist("dependencies[]")  # format: ["type:id"]
 
-    # 1. Створення операції
+    # 1. Create a transaction
     operation = Operation(name=name, component_id=component_id, product_type=product_type)
     db.session.add(operation)
-    db.session.commit()  # потрібно, щоб отримати operation.id
+    db.session.commit()  # needed to get operation.id
 
-    # 2. Локація
+    # 2. Location
     db.session.add(LocationO(location_id=location_id, operation_id=operation.id))
 
-    # 3. Інструменти
+    # 3. Tools
     for tool_id in tool_ids:
         db.session.add(ToolO(tool_id=int(tool_id), operation_id=operation.id))
 
-    # 4. Матеріали
+    # 4. Materials
     for material_id in material_ids:
         db.session.add(MaterialO(material_id=int(material_id), operation_id=operation.id))
 
-    # 5. Залежності
+    # 5. Dependencies
     for dep in dependency_ids:
         dep_type, dep_id = dep.split(":")
         db.session.add(dComponent(component_id=int(dep_id), product_type=dep_type, operation_id=operation.id))
 
-    # 6. Завантаження інструкцій
+    # 6. Download instructions
     uid = str(uuid.uuid4())
     base_path = os.path.join(UPLOAD_FOLDER)
     photo_path = save_files(files.getlist("photos"), os.path.join(base_path, "photos", uid))
@@ -747,18 +747,18 @@ def save_files(file_list, target_folder):
 def delete_operation(operation_id):
     operation = Operation.query.get_or_404(operation_id)
 
-    # Отримуємо інструкції для видалення шляхів до директорій
+    # We get instructions for deleting directory paths
     instruction = Instruction.query.filter_by(operation_id=operation_id).first()
 
     if instruction:
-        # Видалення директорій, якщо вони існують
+        # Deleting directories if they exist
         for path in [instruction.photo_path, instruction.video_path, instruction.text_path]:
             if path and os.path.exists(path):
                 shutil.rmtree(path)
 
         db.session.delete(instruction)
 
-    # Видаляємо пов'язані записи
+    # Deleting related records
     db.session.query(LocationO).filter_by(operation_id=operation_id).delete()
     db.session.query(ToolO).filter_by(operation_id=operation_id).delete()
     db.session.query(MaterialO).filter_by(operation_id=operation_id).delete()
@@ -780,7 +780,7 @@ def update_operation(operation_id):
 
     operation.name = data.get("name")
 
-    # Завантаження інструкції або створення нової
+    # Download instructions or create a new one
     instruction = Instruction.query.filter_by(operation_id=operation_id).first()
     if not instruction:
         uid = str(uuid.uuid4())
@@ -795,28 +795,28 @@ def update_operation(operation_id):
         os.makedirs(instruction.text_path, exist_ok=True)
         db.session.add(instruction)
 
-    # Видалити окремі файли
+    # Delete individual files
     for category, path in [("photo", instruction.photo_path), ("video", instruction.video_path), ("text", instruction.text_path)]:
         for filename in deleted_files.get(category, []):
             file_path = os.path.join(path, filename)
             if os.path.exists(file_path):
                 os.remove(file_path)
 
-    # Додати нові файли
+    # Add new files
     save_files(files.getlist("photos"), instruction.photo_path)
     save_files(files.getlist("videos"), instruction.video_path)
     save_files(files.getlist("texts"), instruction.text_path)
 
-    # Оновлення локації
+    # Location update
     db.session.query(LocationO).filter_by(operation_id=operation_id).delete()
     db.session.add(LocationO(location_id=int(data.get("location")), operation_id=operation_id))
 
-    # Очистити зв'язки
+    # Clear connections
     db.session.query(ToolO).filter_by(operation_id=operation_id).delete()
     db.session.query(MaterialO).filter_by(operation_id=operation_id).delete()
     db.session.query(dComponent).filter_by(operation_id=operation_id).delete()
 
-    # Нові зв’язки
+    # New connections
     for t_id in data.getlist("tools[]"):
         db.session.add(ToolO(tool_id=int(t_id), operation_id=operation_id))
     for m_id in data.getlist("materials[]"):
@@ -833,13 +833,13 @@ def update_operation(operation_id):
 def edit_operation(operation_id):
     operation = Operation.query.get_or_404(operation_id)
     component_type = operation.product_type
-    component_id = operation.component_id  # не product_id!
+    component_id = operation.component_id  # not product_id!
     company_id = session.get('company_id')
 
     if not company_id:
         return "Company ID not found in session", 400
 
-    # Залежності
+    # Dependencies
     dependencies = []
     if component_type == 'block':
         block = Block.query.get(component_id)
@@ -848,16 +848,16 @@ def edit_operation(operation_id):
         detail = Detail.query.get(component_id)
         dependencies = Detail.query.filter(Detail.block_id == detail.block_id, Detail.id != component_id).all()
 
-    # Витягування залежностей, інструментів, матеріалів
-    # Залежні компоненти
+    # Extracting dependencies, tools, materials
+    # Dependent components
     dependencies = dComponent.query.filter_by(operation_id=operation.id).all()
     selected_dependencies = [f"{d.product_type}:{d.component_id}" for d in dependencies]
 
-    # Інструменти
+    # Tools
     tools = ToolO.query.filter_by(operation_id=operation.id).all()
-    selected_tools = [t.tool_id for t in tools]  # або форматуй, якщо треба
+    selected_tools = [t.tool_id for t in tools]
 
-    # Матеріали
+    # Materials
     materials = MaterialO.query.filter_by(operation_id=operation.id).all()
     selected_materials = [m.material_id for m in materials]
 
@@ -877,7 +877,7 @@ def edit_operation(operation_id):
         video_files = list_files_in_dir(instruction.video_path)
         text_files = list_files_in_dir(instruction.text_path)
 
-    # Назва компоненту
+    # Name of the component
     obj = None
     if component_type == "product":
         obj = Product.query.get(component_id)
@@ -895,17 +895,17 @@ def edit_operation(operation_id):
     materials = Material.query.filter_by(company_id=company_id).all()
     tools = Tool.query.filter_by(company_id=company_id).all()
 
-    # Приклад логіки залежно від типу
+    # Example of type-dependent logic
     dependencies = []
     if component_type == 'block':
-        # Отримати інші блоки цього виробу
+        # Get other blocks of this product
         block = Block.query.get(component_id)
         dependencies = Block.query.filter(
             Block.product_id == block.product_id,
             Block.id != component_id
         ).all()
     elif component_type == 'detail':
-        # Отримати інші деталі цього блоку
+        # Get other details of this block
         detail = Detail.query.get(component_id)
         dependencies = Detail.query.filter(
             Detail.block_id == detail.block_id,
@@ -988,7 +988,7 @@ def add_task():
 
     product = Product.query.filter_by(id=admin_task.product_id, company_id=company_id).first()
 
-    # Знайдемо вже створені завдання
+    # Find already created tasks
     existing_tasks = Task.query.filter_by(admin_task_id=admin_task.id).all()
     task_map = [
         {
@@ -1007,7 +1007,7 @@ def add_task():
         product=product,
         employees=employee_data,
         admin_task=admin_task,
-        task_map=task_map  # передаємо у шаблон
+        task_map=task_map  # transfer to the template
     )
 
 @app.route('/create_task', methods=['POST'])
@@ -1055,15 +1055,15 @@ def create_task():
 @app.route('/delete_admin_task/<int:task_id>', methods=['POST'])
 @login_required
 def delete_admin_task(task_id):
-    # Знайди запис aTask
+    # Finding aTask record
     admin_task = aTask.query.get(task_id)
     if not admin_task:
         return redirect(url_for('home'))
 
-    # Видалити пов'язані записи з tasks
+    # Deleting tasks-related entries
     Task.query.filter_by(admin_task_id=task_id).delete()
 
-    # Видалити сам запис з admin_tasks
+    # Deleting the entry itself from admin_tasks
     db.session.delete(admin_task)
     db.session.commit()
 
@@ -1139,24 +1139,23 @@ def instruction_page():
     text_path = ""
 
     if instruction:
-        # Нормалізуємо шляхи для URL
+        # Normalize paths for URLs
         photo_path = normalize_path_for_url(instruction.photo_path) or ""
         video_path = normalize_path_for_url(instruction.video_path) or ""
         text_path = normalize_path_for_url(instruction.text_path) or ""
 
-        # Для читання файлів із файлової системи коректно сформуємо абсолютні шляхи
-        # Якщо в базі зберігаються відносні шляхи відносно static, додаємо їх
-        base_static_path = os.path.join(os.getcwd(), 'static')  # або де у тебе корінь static
+        # To read files from the file system, we will correctly form absolute paths
+        # If the database stores relative paths relative to static, add them
+        base_static_path = os.path.join(os.getcwd(), 'static')  # or where is your root static
 
         def get_fs_path(url_path):
-            # Перекладаємо URL-подібний шлях у шлях файлової системи (для os.listdir)
-            # Наприклад, 'static/uploads/text_instructions/...' => '<поточна_директорія>/static/uploads/text_instructions/...'
-            # Якщо url_path починається з "static/", відрізаємо static і додаємо base_static_path
+            # Translate a URL-like path into a file system path (for os.listdir)
+            # If url_path starts with "static/", cut off static and add base_static_path
             if url_path.startswith('static/'):
                 relative_part = url_path[len('static/'):]
                 return os.path.join(base_static_path, relative_part)
             else:
-                # Якщо немає static на початку, вважай як є
+                # If there is no static at the beginning
                 return os.path.join(base_static_path, url_path)
 
         if photo_path:
