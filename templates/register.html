@@ -13,13 +13,6 @@
 
 <div class="register-container">
     <form class="register-form" id="register-form" action="/register" method="POST">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
         <h2>Реєстрація</h2>
         <hr>
         <label for="phone-number">Номер телефону:</label>

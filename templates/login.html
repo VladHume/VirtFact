@@ -15,13 +15,6 @@
 
 <div class="login-container">
     <form class="login-form" id="login-form" action="#" method="post">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
         <h2>Авторизація в системі</h2>
         <hr>
         <label for="login">Логін:</label>

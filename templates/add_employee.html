@@ -22,15 +22,6 @@
 </header>
 
 <div class="content-container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
 
   <form id="employee-form" class="employee-form" action="/add_employee_action" method="POST" enctype="multipart/form-data">
       <label for="surname">Прізвище:</label>
